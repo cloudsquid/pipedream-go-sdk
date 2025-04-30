@@ -73,11 +73,53 @@ func (suite *appsTestSuite) TestListApps_Success() {
 	resp, err := suite.pipedreamClient.ListApps(
 		context.Background(),
 		"git",
+		false,
+		false,
+		false,
 	)
 
 	require.NoError(err)
 	require.NotNil(resp)
 	require.Equal(resp.Data[0].Name, "Slack")
+}
+
+func (suite *appsTestSuite) TestGetApp_Success() {
+	require := suite.Require()
+	expectedPath := "/apps/app_OkrhR1"
+	expectedResponse := `{
+	  "data": 
+		{
+		  "id": "app_OkrhR1",
+		  "name_slug": "slack",
+		  "name": "Slack",
+		  "auth_type": "oauth",
+		  "description": "Slack is a channel-based messaging platform. With Slack, people can work together more effectively, connect all their software tools and services, and find the information they need to do their best work — all within a secure, enterprise-grade environment."
+		}
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodGet, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	baseParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = baseParsed
+
+	resp, err := suite.pipedreamClient.GetApp(
+		context.Background(),
+		"app_OkrhR1",
+	)
+
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal(resp.Data.Name, "Slack")
 }
 
 func TestApps(t *testing.T) {
