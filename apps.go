@@ -65,7 +65,7 @@ func (p *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 
 // GetApp Retrieve metadata for a specific app
 func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, error) {
-	p.logger.Info("get an apps")
+	p.logger.Info("get an app")
 
 	baseURL := p.baseURL.ResolveReference(&url.URL{
 		Path: path.Join(p.baseURL.Path, "apps", appID)})
@@ -74,12 +74,12 @@ func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, err
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
+		return nil, fmt.Errorf("creating get an app request %s: %w", endpoint, err)
 	}
 
 	response, err := p.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("executing request: %w", err)
+		return nil, fmt.Errorf("executing get an app request: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -91,7 +91,7 @@ func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, err
 	var app GetAppResponse
 	err = json.NewDecoder(response.Body).Decode(&app)
 	if err != nil {
-		return nil, fmt.Errorf("decoding response: %w", err)
+		return nil, fmt.Errorf("decoding response for get an app request: %w", err)
 	}
 
 	return &app, nil

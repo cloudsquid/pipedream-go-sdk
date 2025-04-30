@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -131,6 +132,26 @@ type GetComponentResponse struct {
 // ListComponentResponse is the response for the component list endpoint
 type ListComponentResponse struct {
 	Data []*Component `json:"data,omitempty"`
+}
+
+type CreateComponentRequest struct {
+	ComponentCode string `json:"component_code,omitempty"`
+	ComponentURL  string `json:"component_url,omitempty"`
+}
+
+type NewComponent struct {
+	ID                string             `json:"id"`
+	Code              string             `json:"code"`
+	CodeHash          string             `json:"code_hash"`
+	Name              string             `json:"name"`
+	Version           string             `json:"version"`
+	ConfigurableProps []ConfigurableProp `json:"configurable_props,omitempty"`
+	CreatedAt         int64              `json:"created_at"`
+	UpdatedAt         int64              `json:"updated_at"`
+}
+
+type CreateComponentResponse struct {
+	Data *NewComponent `json:"data,omitempty"`
 }
 
 // https://pipedream.com/docs/connect/api/#configure-a-component
@@ -328,6 +349,52 @@ func (p *Client) ReloadComponentProps(
 	if err := unmarshalResponse(resp, &respJson); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for reloading component props: %w", err)
+	}
+
+	return &respJson, nil
+}
+
+// CreateComponent returns the components id, code, configurable_props, and other metadata you’ll need to deploy a source from this component
+func (p *Client) CreateComponent(
+	ctx context.Context,
+	componentCode string,
+	componentURL string,
+) (*CreateComponentResponse, error) {
+	p.logger.Info("Create component")
+
+	if componentCode == "" && componentURL == "" {
+		return nil, fmt.Errorf("either componentCode or componentURL must be provided")
+	}
+	baseURL := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "components")})
+	endpoint := baseURL.String()
+
+	payload := &CreateComponentRequest{ComponentCode: componentCode, ComponentURL: componentURL}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling create component body request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("creating create component request %s: %w", endpoint, err)
+	}
+
+	response, err := p.doRequest(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing create component request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
+
+	var respJson CreateComponentResponse
+	if err := unmarshalResponse(response, &respJson); err != nil {
+		return nil, fmt.Errorf("parsing reponse for create component request: %w", err)
 	}
 
 	return &respJson, nil

@@ -276,6 +276,61 @@ func (suite *componentTestSuite) TestReloadComponentProps_Success() {
 	require.Equal("googleSheets", resp.DynamicProps.ConfigurableProps[0].Name)
 }
 
+func (suite *componentTestSuite) TestCreateComponent_Success() {
+	require := suite.Require()
+
+	expectedPath := "/components"
+
+	expectedResponse := `{
+	  "data": {
+		"id": "sc_JDi8EB",
+		"code": "component code here",
+		"code_hash": "6",
+		"name": "rss",
+		"version": "0.0.1",
+		"configurable_props": [
+		  {
+			"name": "url",
+			"type": "string",
+			"label": "Feed URL"
+		  }
+		],
+		"created_at": 1588866900,
+		"updated_at": 1588866900
+	  }
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodPost, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(err)
+
+		var reqPayload CreateComponentRequest
+		err = json.Unmarshal(body, &reqPayload)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.CreateComponent(
+		context.Background(),
+		"",
+		"https://github.com/PipedreamHQ/pipedream/new-item-in-feed.ts",
+	)
+
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal(resp.Data.Name, "rss")
+}
+
 func TestComponent(t *testing.T) {
 	suite.Run(t, new(componentTestSuite))
 }
