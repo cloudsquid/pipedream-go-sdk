@@ -399,3 +399,35 @@ func (p *Client) CreateComponent(
 
 	return &respJson, nil
 }
+
+// GetComponentFromRegistry returns the same data as the endpoint for retrieving metadata on a component you own, but allows you to fetch data for any globally-published component
+func (p *Client) GetComponentFromRegistry(
+	ctx context.Context,
+	componentKey string,
+) (*CreateComponentResponse, error) {
+	p.logger.Info("Getting component from registry")
+
+	endpoint := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "components", "registry", componentKey)}).String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating new get component from registery request %s: %w",
+			endpoint, err)
+	}
+
+	response, err := p.doRequest(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer response.Body.Close()
+
+	var component CreateComponentResponse
+	if err := unmarshalResponse(response, &component); err != nil {
+		return nil, fmt.Errorf(
+			"parsing response for getting component details for component %s: %w",
+			componentKey, err)
+	}
+
+	return &component, nil
+}
