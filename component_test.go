@@ -331,7 +331,7 @@ func (suite *componentTestSuite) TestCreateComponent_Success() {
 	require.Equal(resp.Data.Name, "rss")
 }
 
-func (suite *componentTestSuite) TestGetComponentFromRegistry_Success() {
+func (suite *componentTestSuite) TestGetRegistryComponents_Success() {
 	require := suite.Require()
 
 	expectedPath := "/components/registry/github-new-repository"
@@ -370,7 +370,7 @@ func (suite *componentTestSuite) TestGetComponentFromRegistry_Success() {
 	suite.pipedreamClient.httpClient = server.Client()
 	suite.pipedreamClient.baseURL = restParsed
 
-	resp, err := suite.pipedreamClient.GetComponentFromRegistry(
+	resp, err := suite.pipedreamClient.GetRegistryComponents(
 		context.Background(),
 		"github-new-repository",
 	)
@@ -378,6 +378,44 @@ func (suite *componentTestSuite) TestGetComponentFromRegistry_Success() {
 	require.NoError(err)
 	require.NotNil(resp)
 	require.Equal(resp.Data.Name, "rss")
+}
+
+func (suite *componentTestSuite) TestSearchRegistryComponents_Success() {
+	require := suite.Require()
+
+	expectedPath := "/components/search"
+
+	expectedResponse := `{
+		"sources": ["hubspot-new-contact"],
+		"actions": ["twilio-send-sms"]
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodGet, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(r.URL.RawQuery, "query=SendSMS")
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.SearchRegistryComponents(
+		context.Background(),
+		"SendSMS",
+		"", 0, false,
+	)
+
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal(resp.Actions, []string{"twilio-send-sms"})
+	require.Equal(resp.Sources, []string{"hubspot-new-contact"})
 }
 
 func TestComponent(t *testing.T) {

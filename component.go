@@ -154,6 +154,11 @@ type CreateComponentResponse struct {
 	Data *NewComponent `json:"data,omitempty"`
 }
 
+type ComponentSearchResponse struct {
+	Sources []string `json:"sources"`
+	Actions []string `json:"actions"`
+}
+
 // https://pipedream.com/docs/connect/api/#configure-a-component
 // ConfigureComponent calls the configure endpoint for a component in pipedream
 // externalUserID is the id defined by a third party or us
@@ -401,7 +406,7 @@ func (p *Client) CreateComponent(
 }
 
 // GetComponentFromRegistry returns the same data as the endpoint for retrieving metadata on a component you own, but allows you to fetch data for any globally-published component
-func (p *Client) GetComponentFromRegistry(
+func (p *Client) GetRegistryComponents(
 	ctx context.Context,
 	componentKey string,
 ) (*CreateComponentResponse, error) {
@@ -422,11 +427,73 @@ func (p *Client) GetComponentFromRegistry(
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
+
 	var component CreateComponentResponse
 	if err := unmarshalResponse(response, &component); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for getting component details for component %s: %w",
 			componentKey, err)
+	}
+
+	return &component, nil
+}
+
+// SearchRegistryComponents Search for components in the global registry with natural language
+func (p *Client) SearchRegistryComponents(
+	ctx context.Context,
+	query string,
+	app string,
+	similarityThreshold int,
+	debug bool,
+) (*ComponentSearchResponse, error) {
+	p.logger.Info("searching registry component")
+
+	baseURL := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "components", "search")})
+
+	if query == "" {
+		return nil, fmt.Errorf("query is required")
+	}
+
+	queryParams := url.Values{}
+	addQueryParams(queryParams, "query", query)
+	if app != "" {
+		addQueryParams(queryParams, "app", app)
+	}
+	if similarityThreshold > 0 {
+		addQueryParams(queryParams, "similarity_threshold", fmt.Sprintf("%d", similarityThreshold))
+	}
+	if debug {
+		addQueryParams(queryParams, "debug", "true")
+	}
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating new search registry component request %s: %w",
+			endpoint, err)
+	}
+
+	response, err := p.doRequest(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing search registry component request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
+
+	var component ComponentSearchResponse
+	if err := unmarshalResponse(response, &component); err != nil {
+		return nil, fmt.Errorf(
+			"parsing response for search registry component request: %w", err)
 	}
 
 	return &component, nil
