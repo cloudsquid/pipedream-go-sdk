@@ -49,7 +49,7 @@ func (p *Client) InvokeAction(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	resp, err := p.doRequest(ctx, req)
+	resp, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing invoke action request: %w", err)
 	}

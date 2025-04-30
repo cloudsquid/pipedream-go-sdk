@@ -116,7 +116,7 @@ func (p *Client) DeployTrigger(
 		return nil, fmt.Errorf("creating new deploy trigger request: %w", err)
 	}
 
-	resp, err := p.doRequest(ctx, req)
+	resp, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing deploy trigger request: %w", err)
 	}
@@ -147,7 +147,7 @@ func (p *Client) ListDeployedTriggers(
 		return nil, fmt.Errorf("creating new request to list deployed triggers: %w", err)
 	}
 
-	listResponse, err := p.doRequest(ctx, req)
+	listResponse, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to list deployed triggers: %w", err)
 	}
@@ -179,7 +179,7 @@ func (p *Client) GetDeployedTrigger(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, getRequest)
+	response, err := p.doRequestViaOauth(ctx, getRequest)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to retrieve trigger: %w", err)
 	}
@@ -209,7 +209,7 @@ func (p *Client) DeleteDeployedTrigger(
 		return fmt.Errorf("creating new delete trigger request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, deleteRequest)
+	response, err := p.doRequestViaOauth(ctx, deleteRequest)
 	if err != nil {
 		return fmt.Errorf("executing delete trigger request: %w", err)
 	}
@@ -240,7 +240,7 @@ func (p *Client) RetrieveTriggerEvents(
 		return nil, fmt.Errorf("creating new retrieve trigger events request: %w", err)
 	}
 
-	triggerResponse, err := p.doRequest(ctx, eventsReq)
+	triggerResponse, err := p.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to retrieve trigger events: %w", err)
 	}
@@ -271,7 +271,7 @@ func (p *Client) ListTriggerWebhooks(
 		return nil, fmt.Errorf("creating list trigger webhooks request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, eventsReq)
+	response, err := p.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to list trigger webhooks: %w", err)
 	}
@@ -309,7 +309,7 @@ func (p *Client) UpdateTriggerWebhooks(
 		return nil, fmt.Errorf("creating update trigger webhooks request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, eventsReq)
+	response, err := p.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to update trigger webhooks: %w", err)
 	}
@@ -340,7 +340,7 @@ func (p *Client) RetrieveTriggerWorkflows(
 		return nil, fmt.Errorf("creating Retrieve trigger workflows request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to Retrieve trigger workflows: %w", err)
 	}
@@ -378,7 +378,7 @@ func (p *Client) UpdateTriggerWorkflows(
 		return nil, fmt.Errorf("creating update trigger workflows request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, eventsReq)
+	response, err := p.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to update trigger workflows: %w", err)
 	}

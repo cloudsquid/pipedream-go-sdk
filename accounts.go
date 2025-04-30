@@ -91,7 +91,7 @@ func (p *Client) ListAccounts(
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -137,7 +137,7 @@ func (p *Client) GetAccount(
 		return nil, fmt.Errorf("creating get account request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to get account: %w", err)
 	}
@@ -173,7 +173,7 @@ func (p *Client) DeleteAccount(
 		return fmt.Errorf("creating delete account request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to delete an account: %w", err)
 	}
@@ -201,7 +201,7 @@ func (p *Client) DeleteAccounts(
 		return fmt.Errorf("creating get account request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to get account: %w", err)
 	}
@@ -228,7 +228,7 @@ func (p *Client) DeleteEndUser(
 		return fmt.Errorf("creating delete end user request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to delete end usert: %w", err)
 	}

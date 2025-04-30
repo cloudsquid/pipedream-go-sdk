@@ -13,7 +13,7 @@ import (
 	"slices"
 )
 
-func (p *Client) doRequest(
+func (p *Client) doRequestViaOauth(
 	ctx context.Context,
 	req *http.Request,
 ) (*http.Response, error) {
@@ -25,6 +25,31 @@ func (p *Client) doRequest(
 	}
 
 	req.Header.Set("Authorization", "Bearer "+p.token.AccessToken)
+	req.Header.Set("X-PD-Environment", p.environment)
+	req.Header.Set("Content-Type", "application/json")
+
+	p.logger.Info("Executing request",
+		"url", req.URL.String(),
+		"request", req.Header,
+		"environment", p.environment,
+	)
+
+	response, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request to pipedream api in environment %s failed: %w",
+			p.environment, err)
+	}
+
+	return response, nil
+}
+
+func (p *Client) doRequestViaApiKey(
+	ctx context.Context,
+	req *http.Request,
+) (*http.Response, error) {
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 	req.Header.Set("X-PD-Environment", p.environment)
 	req.Header.Set("Content-Type", "application/json")
 

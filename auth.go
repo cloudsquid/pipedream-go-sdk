@@ -66,7 +66,7 @@ func (p *Client) AcquireUserToken(
 			fmt.Errorf("creating new request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil,
 			fmt.Errorf("executing request to get user token: %w", err)

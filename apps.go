@@ -46,7 +46,7 @@ func (p *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -77,7 +77,7 @@ func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, err
 		return nil, fmt.Errorf("creating get an app request %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing get an app request: %w", err)
 	}

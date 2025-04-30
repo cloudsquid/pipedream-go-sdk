@@ -209,7 +209,7 @@ func (p *Client) GetPropOptions(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil,
 			fmt.Errorf("executing request to configure component %s for user %s: %w",
@@ -250,7 +250,7 @@ func (p *Client) GetComponent(
 			endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -295,7 +295,7 @@ func (p *Client) ListComponents(
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	resp, err := p.doRequest(ctx, req)
+	resp, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -344,7 +344,7 @@ func (p *Client) ReloadComponentProps(
 		return nil, fmt.Errorf("creating reload component props request: %w", err)
 	}
 
-	resp, err := p.doRequest(ctx, req)
+	resp, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing reload component props request: %w", err)
 	}
@@ -386,7 +386,7 @@ func (p *Client) CreateComponent(
 		return nil, fmt.Errorf("creating create component request %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing create component request: %w", err)
 	}
@@ -421,7 +421,7 @@ func (p *Client) GetRegistryComponents(
 			endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -479,7 +479,7 @@ func (p *Client) SearchRegistryComponents(
 			endpoint, err)
 	}
 
-	response, err := p.doRequest(ctx, req)
+	response, err := p.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing search registry component request: %w", err)
 	}
