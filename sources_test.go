@@ -112,7 +112,7 @@ func (suite *sourcesTestSuite) TestUpdateSource_Success() {
 			"name_slug": "your-name-here"
 		}
 	}`
-	expectedPath := "/sources"
+	expectedPath := "/sources/dc_abc123"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(http.MethodPut, r.Method)
@@ -136,6 +136,7 @@ func (suite *sourcesTestSuite) TestUpdateSource_Success() {
 
 	resp, err := suite.pipedreamClient.UpdateSource(
 		context.Background(),
+		"dc_abc123",
 		"",
 		"",
 		"https://github.com/example/component.ts",
@@ -146,6 +147,32 @@ func (suite *sourcesTestSuite) TestUpdateSource_Success() {
 	require.NoError(err)
 	require.NotNil(resp)
 	require.Equal("your-name-here", resp.Data.Name)
+}
+
+func (suite *sourcesTestSuite) TestDeleteSource_Success() {
+	require := suite.Require()
+	expectedPath := "/sources/dc_abc123"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodDelete, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	err = suite.pipedreamClient.DeleteSource(
+		context.Background(),
+		"dc_abc123",
+	)
+
+	require.NoError(err)
 }
 
 func TestSources(t *testing.T) {

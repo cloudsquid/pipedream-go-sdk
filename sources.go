@@ -105,6 +105,7 @@ func (p *Client) CreateSource(
 // UpdateSource updates a source
 func (p *Client) UpdateSource(
 	ctx context.Context,
+	sourceID,
 	componentID,
 	componentCode,
 	componentURL,
@@ -117,7 +118,7 @@ func (p *Client) UpdateSource(
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
 	}
 	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources")})
+		Path: path.Join(p.baseURL.Path, "sources", sourceID)})
 	endpoint := baseURL.String()
 
 	body := &UpdateSourceRequest{
@@ -147,8 +148,37 @@ func (p *Client) UpdateSource(
 	var source CreateSourceResponse
 	if err := unmarshalResponse(response, &source); err != nil {
 		return nil, fmt.Errorf(
-			"parsing response for creating source request: %w", err)
+			"parsing response for updating source request: %w", err)
 	}
 
 	return &source, nil
+}
+
+// DeleteSource deletes a source
+func (p *Client) DeleteSource(
+	ctx context.Context,
+	sourceID string,
+) error {
+	p.logger.Info("deleting source")
+
+	baseURL := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "sources", sourceID)})
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("creating deleting source for endpoint %s: %w", endpoint, err)
+	}
+
+	response, err := p.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return fmt.Errorf("executing deleting source request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusNoContent {
+		return nil
+	}
+	return fmt.Errorf("expected status %d, got %d",
+		http.StatusNoContent, response.StatusCode)
 }
