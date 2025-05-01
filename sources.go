@@ -17,6 +17,15 @@ type CreateSourceRequest struct {
 	Name          string `json:"name,omitempty"`
 }
 
+type UpdateSourceRequest struct {
+	ComponentID   string `json:"component_id,omitempty"`
+	ComponentCode string `json:"component_code,omitempty"`
+	ComponentURL  string `json:"component_url,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Active        bool   `json:"active,omitempty"` // default is true
+}
+
+// CreateSourceResponse is the response for both creating and updating a source
 type CreateSourceResponse struct {
 	Data SourceData `json:"data"`
 }
@@ -81,6 +90,57 @@ func (p *Client) CreateSource(
 	response, err := p.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing creating source request: %w", err)
+	}
+	defer response.Body.Close()
+
+	var source CreateSourceResponse
+	if err := unmarshalResponse(response, &source); err != nil {
+		return nil, fmt.Errorf(
+			"parsing response for creating source request: %w", err)
+	}
+
+	return &source, nil
+}
+
+// UpdateSource updates a source
+func (p *Client) UpdateSource(
+	ctx context.Context,
+	componentID,
+	componentCode,
+	componentURL,
+	name string,
+	active bool,
+) (*CreateSourceResponse, error) {
+	p.logger.Info("updating source")
+
+	if componentID == "" && componentCode == "" && componentURL == "" {
+		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
+	}
+	baseURL := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "sources")})
+	endpoint := baseURL.String()
+
+	body := &UpdateSourceRequest{
+		ComponentID:   componentID,
+		ComponentCode: componentCode,
+		ComponentURL:  componentURL,
+		Name:          name,
+		Active:        active,
+	}
+
+	rb, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling updating source request body: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, endpoint, bytes.NewReader(rb))
+	if err != nil {
+		return nil, fmt.Errorf("creating updating source for endpoint %s: %w", endpoint, err)
+	}
+
+	response, err := p.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing updating source request: %w", err)
 	}
 	defer response.Body.Close()
 
