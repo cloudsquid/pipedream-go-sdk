@@ -303,6 +303,66 @@ func (suite *workflowsTestSuite) TestGetWorkflowDetails_Success() {
 	require.Equal("hi_ABpHKz", resp.Triggers[0].ID)
 }
 
+func (suite *workflowsTestSuite) TestGetWorkflowEmits_Success() {
+	require := suite.Require()
+	workflowID := "p_48rCxZ"
+	orgID := "org123"
+	expectedResponse := `{
+	  "page_info": {
+		"total_count": 1,
+		"start_cursor": "1606511826306-0",
+		"end_cursor": "1606511826306-0",
+		"count": 1
+	  },
+	  "data": [
+		{
+		  "id": "1606511826306-0",
+		  "indexed_at_ms": 1606511826306,
+		  "event": {
+			"raw_event": {
+			  "name": "Luke",
+			  "title": "Jedi"
+			}
+		  },
+		  "metadata": {
+			"emit_id": "1ktF96gAMsLqdYSRWYL9KFS5QqW",
+			"name": "",
+			"emitter_id": "p_abc123"
+		  }
+		}
+	  ]
+	}`
+
+	expectedPath := "/workflows/p_48rCxZ/event_summaries"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(http.MethodGet, r.Method)
+		require.Equal(orgID, r.URL.Query().Get("org_id"))
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.GetWorkflowEmits(
+		context.Background(),
+		workflowID,
+		orgID,
+		false,
+		0,
+	)
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal("1606511826306-0", resp.Data[0].ID)
+}
+
 func TestWorkflows(t *testing.T) {
 	suite.Run(t, new(workflowsTestSuite))
 }

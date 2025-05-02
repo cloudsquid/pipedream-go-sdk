@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 )
 
 type CreateWorkflowRequest struct {
@@ -108,6 +109,28 @@ type UpdateWorkflowRequest struct {
 type GetWorkflowDetailsResponse struct {
 	Triggers []TriggerInfo      `json:"triggers"`
 	Steps    []WorkflowStepInfo `json:"steps"`
+}
+
+type GetWorkflowEmitsResponse struct {
+	PageInfo PageInfo       `json:"page_info"`
+	Data     []EventSummary `json:"data"`
+}
+
+type EventSummary struct {
+	ID        string   `json:"id"`
+	IndexedAt int64    `json:"indexed_at_ms"`
+	Event     RawEvent `json:"event"`
+	Metadata  Metadata `json:"metadata"`
+}
+
+type RawEvent struct {
+	RawEvent map[string]interface{} `json:"raw_event"`
+}
+
+type Metadata struct {
+	EmitID    string `json:"emit_id"`
+	Name      string `json:"name"`
+	EmitterID string `json:"emitter_id"`
 }
 
 // TODO: implement invoke workflow
@@ -252,6 +275,61 @@ func (c *Client) GetWorkflowDetails(
 	}
 
 	var result GetWorkflowDetailsResponse
+	if err := unmarshalResponse(response, &result); err != nil {
+		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetWorkflowEmits Retrieves up to the last 100 events emitted from a workflow using $send.emit().
+func (c *Client) GetWorkflowEmits(
+	ctx context.Context,
+	id,
+	orgID string,
+	expandEvent bool,
+	limit int, // if 0 no limit is applied
+) (*GetWorkflowEmitsResponse, error) {
+	c.logger.Debug("get workflow emits")
+
+	if orgID == "" {
+		return nil, fmt.Errorf("orgID is required")
+	}
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "workflows", id, "event_summaries"),
+	})
+
+	queryParams := url.Values{}
+	addQueryParams(queryParams, "org_id", orgID)
+
+	if expandEvent {
+		addQueryParams(queryParams, "expand", "event")
+	}
+
+	if limit > 0 {
+		addQueryParams(queryParams, "limit", strconv.Itoa(limit))
+	}
+
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get workflow emits request: %w", err)
+	}
+
+	response, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing get workflow emits request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		raw, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(raw))
+	}
+
+	var result GetWorkflowEmitsResponse
 	if err := unmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
 	}
