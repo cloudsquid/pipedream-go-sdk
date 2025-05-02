@@ -75,3 +75,31 @@ func (c *Client) CreateWebhook(
 
 	return &webhook, nil
 }
+
+// DeleteWebhook deletes a webhook in your account.
+func (c *Client) DeleteWebhook(
+	ctx context.Context,
+	id string,
+) error {
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "webhooks", id),
+	})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL.String(), nil)
+	if err != nil {
+		return fmt.Errorf("creating delete webhook request: %w", err)
+	}
+
+	response, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return fmt.Errorf("executing delete webhook  request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusNoContent {
+		return nil
+	} else {
+		return fmt.Errorf("expected status %d, got %d",
+			http.StatusNoContent, response.StatusCode)
+	}
+}

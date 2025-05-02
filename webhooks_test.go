@@ -80,6 +80,32 @@ func (suite *webhooksTestSuite) TestCreateWebhook_Success() {
 	require.Equal("My Webhook", *resp.Data.Name)
 }
 
+func (suite *webhooksTestSuite) TestDeleteWebhook_Success() {
+	require := suite.Require()
+	expectedPath := "/webhooks/wh_123"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodDelete, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	err = suite.pipedreamClient.DeleteWebhook(
+		context.Background(),
+		"wh_123",
+	)
+
+	require.NoError(err)
+}
+
 func TestWebhooks(t *testing.T) {
 	suite.Run(t, new(webhooksTestSuite))
 }
