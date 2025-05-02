@@ -97,6 +97,11 @@ type TriggerInfo struct {
 	NameSlug        string                 `json:"name_slug"`
 }
 
+type UpdateWorkflowRequest struct {
+	Active bool   `json:"active"`
+	OrgID  string `json:"org_id"`
+}
+
 // TODO: implement invoke workflow
 // CreateWorkflow Creates a new workflow within an organization’s project
 // This endpoint allows defining workflow steps, triggers, and settings, based on a supplied template
@@ -136,7 +141,7 @@ func (c *Client) CreateWorkflow(
 
 	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("executing create component request: %w", err)
+		return nil, fmt.Errorf("executing create workflow request: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -151,4 +156,52 @@ func (c *Client) CreateWorkflow(
 	}
 
 	return &respJson, nil
+}
+
+// UpdateWorkflow Updates the workflow’s activation status
+// Does not modify the workflow’s steps, triggers, or connected accounts
+func (c *Client) UpdateWorkflow(
+	ctx context.Context,
+	id,
+	orgID string,
+	active bool,
+) (*map[string]any, error) {
+	c.logger.Debug("update workflow")
+
+	endpoint := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "workflows", id),
+	}).String()
+
+	payload := &UpdateWorkflowRequest{
+		OrgID:  orgID,
+		Active: active,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling update workflow request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("creating update workflow request: %w", err)
+	}
+
+	response, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing update workflow request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		raw, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(raw))
+	}
+
+	var result map[string]any
+	if err := unmarshalResponse(response, &result); err != nil {
+		return nil, fmt.Errorf("unmarshalling update workflow response:e: %w", err)
+	}
+
+	return &result, nil
 }

@@ -156,6 +156,91 @@ func (suite *workflowsTestSuite) TestCreateWorkflow_Success() {
 	require.Equal("example workflow name", resp.Data.Name)
 }
 
-func TestWorflows(t *testing.T) {
+func (suite *workflowsTestSuite) TestUpdateWorkflow_Success() {
+	require := suite.Require()
+	workflowID := "p_48rCxZ"
+	orgID := "org123"
+	active := false
+	expectedResponse := `{
+		  "data": {
+			"inactive": true,
+			"name_slug": "test-http-trigger",
+			"id": "p_48rCxZ",
+			"endpoint_id": "en8745sd2vo1fo5",
+			"owner_id": "o_JvIwWMD",
+			"owner_type": "Org",
+			"name": "test http trigger",
+			"description": null,
+			"created_at": "2025-04-15T13:44:28.000Z",
+			"updated_at": "2025-05-02T12:05:30.000Z",
+			"emits": [
+			  {
+				"e": {
+				  "orgId": "o_JvIwWMD",
+				  "email": "someemial@example.com",
+				  "subscriptionActive": false,
+				  "useCredits": true,
+				  "isDev": false,
+				  "devNamespace": null
+				},
+				"k": "emit",
+				"ts": 1745858287801,
+				"id": "1745858287801-0"
+			  }
+			],
+			"emitter_connected": null,
+			"project_id": 468082,
+			"route_params": {
+			  "ownerName": "name",
+			  "id": "p_yKCwOWDz",
+			  "nameSlug": "test-http-trigger-",
+			  "projectId": "proj_zNswc1XRz"
+			},
+			"edit": true,
+			"deployments": [
+			  [
+				"d_v7sjwdcrm1K8",
+				"2025-04-15T13:44:28.000Z"
+			  ]
+			]
+		  }
+		}`
+
+	expectedPath := "/workflows/p_48rCxZ"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(http.MethodPut, r.Method)
+
+		body, err := io.ReadAll(r.Body)
+		require.NoError(err)
+
+		var reqPayload UpdateWorkflowRequest
+		err = json.Unmarshal(body, &reqPayload)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.UpdateWorkflow(
+		context.Background(),
+		workflowID,
+		orgID,
+		active,
+	)
+	require.NoError(err)
+	require.NotNil(resp)
+	data := (*resp)["data"].(map[string]any)
+	require.Equal("p_48rCxZ", data["id"])
+}
+
+func TestWorkflows(t *testing.T) {
 	suite.Run(t, new(workflowsTestSuite))
 }
