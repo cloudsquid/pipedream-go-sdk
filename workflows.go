@@ -95,11 +95,19 @@ type TriggerInfo struct {
 	UpdatedAt       int64                  `json:"updated_at"`
 	Name            string                 `json:"name"`
 	NameSlug        string                 `json:"name_slug"`
+	Key             string                 `json:"key,omitempty"`
+	CustomResponse  bool                   `json:"custom_response,omitempty"`
+	EndpointURL     string                 `json:"endpoint_url,omitempty"`
 }
 
 type UpdateWorkflowRequest struct {
 	Active bool   `json:"active"`
 	OrgID  string `json:"org_id"`
+}
+
+type GetWorkflowDetailsResponse struct {
+	Triggers []TriggerInfo      `json:"triggers"`
+	Steps    []WorkflowStepInfo `json:"steps"`
 }
 
 // TODO: implement invoke workflow
@@ -201,6 +209,51 @@ func (c *Client) UpdateWorkflow(
 	var result map[string]any
 	if err := unmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling update workflow response:e: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetWorkflowDetails Retrieves the details of a specific workflow within an organization’s project
+func (c *Client) GetWorkflowDetails(
+	ctx context.Context,
+	id,
+	orgID string,
+) (*GetWorkflowDetailsResponse, error) {
+	c.logger.Debug("get workflow details")
+
+	if orgID == "" {
+		return nil, fmt.Errorf("orgID is required")
+	}
+
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "workflows", id),
+	})
+
+	queryParams := url.Values{}
+	addQueryParams(queryParams, "org_id", orgID)
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get workflow details request: %w", err)
+	}
+
+	response, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing get workflow details request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		raw, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(raw))
+	}
+
+	var result GetWorkflowDetailsResponse
+	if err := unmarshalResponse(response, &result); err != nil {
+		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
 	}
 
 	return &result, nil

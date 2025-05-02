@@ -241,6 +241,68 @@ func (suite *workflowsTestSuite) TestUpdateWorkflow_Success() {
 	require.Equal("p_48rCxZ", data["id"])
 }
 
+func (suite *workflowsTestSuite) TestGetWorkflowDetails_Success() {
+	require := suite.Require()
+	workflowID := "p_48rCxZ"
+	orgID := "org123"
+	expectedResponse := `{
+	  "triggers": [
+		{
+		  "id": "hi_ABpHKz",
+		  "key": "eabcdefghiklmnop",
+		  "endpoint_url": "http://eabcdefghiklmnop.m.d.pipedream.net",
+		  "custom_response": false
+		}
+	  ],
+	  "steps": [
+		{
+		  "id": "c_abc123",
+		  "namespace": "code",
+		  "disabled": false,
+		  "lang": "nodejs20.x",
+		  "appConnections": [],
+		  "component": true,
+		  "savedComponent": {
+			"id": "sc_abc123",
+			"codeHash": "long-hash-here",
+			"configurableProps": [],
+			"version": ""
+		  },
+		  "component_key": null,
+		  "component_owner_id": "o_abc123",
+		  "configured_props_json": "{}"
+		}
+	  ]
+	}`
+
+	expectedPath := "/workflows/p_48rCxZ"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(http.MethodGet, r.Method)
+		require.Equal(orgID, r.URL.Query().Get("org_id"))
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.GetWorkflowDetails(
+		context.Background(),
+		workflowID,
+		orgID,
+	)
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal("hi_ABpHKz", resp.Triggers[0].ID)
+}
+
 func TestWorkflows(t *testing.T) {
 	suite.Run(t, new(workflowsTestSuite))
 }
