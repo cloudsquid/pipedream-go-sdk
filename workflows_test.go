@@ -363,6 +363,72 @@ func (suite *workflowsTestSuite) TestGetWorkflowEmits_Success() {
 	require.Equal("1606511826306-0", resp.Data[0].ID)
 }
 
+func (suite *workflowsTestSuite) TestGetWorkflowErrors_Success() {
+	require := suite.Require()
+	workflowID := "p_48rCxZ"
+	expectedResponse := `{
+	  "page_info": {
+		"total_count": 100,
+		"start_cursor": "1606370816223-0",
+		"end_cursor": "1606370816223-0",
+		"count": 1
+	  },
+	  "data": [
+		{
+		  "id": "1606370816223-0",
+		  "indexed_at_ms": 1606370816223,
+		  "event": {
+			"original_event": {
+			  "name": "Luke",
+			  "title": "Jedi"
+			},
+			"original_context": {
+			  "id": "1kodJIW7jVnKfvB2yp1OoPrtbFk",
+			  "ts": "2020-11-26T06:06:44.652Z",
+			  "workflow_id": "p_abc123",
+			  "deployment_id": "d_abc123",
+			  "source_type": "SDK"
+			},
+			"error": {
+			  "code": "InternalFailure",
+			  "cellId": "c_abc123",
+			  "ts": "2020-11-26T06:06:56.077Z",
+			  "stack": "    at Request.extractError ..."
+			},
+			"metadata": {}
+		  }
+		}
+	  ]
+	}`
+
+	expectedPath := "/workflows/p_48rCxZ/$errors/event_summaries"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(http.MethodGet, r.Method)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	resp, err := suite.pipedreamClient.GetWorkflowErrors(
+		context.Background(),
+		workflowID,
+		false,
+		0,
+	)
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal("1606370816223-0", resp.Data[0].ID)
+}
+
 func TestWorkflows(t *testing.T) {
 	suite.Run(t, new(workflowsTestSuite))
 }

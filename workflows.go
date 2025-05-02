@@ -133,6 +133,38 @@ type Metadata struct {
 	EmitterID string `json:"emitter_id"`
 }
 
+type GetWorkflowErrorsResponse struct {
+	PageInfo PageInfo        `json:"page_info"`
+	Data     []WorkflowError `json:"data"`
+}
+
+type WorkflowError struct {
+	ID              string                 `json:"id"`
+	IndexedAtMS     int64                  `json:"indexed_at_ms"`
+	Event           map[string]interface{} `json:"event"`
+	OriginalContext ErrorOriginalContext   `json:"original_context"`
+	Error           WorkflowExecutionError `json:"error"`
+	Metadata        Metadata               `json:"metadata"`
+}
+
+type ErrorOriginalContext struct {
+	ID              string `json:"id"`
+	Timestamp       string `json:"ts"`
+	WorkflowID      string `json:"workflow_id"`
+	DeploymentID    string `json:"deployment_id"`
+	SourceType      string `json:"source_type"`
+	Verified        bool   `json:"verified"`
+	OwnerID         string `json:"owner_id"`
+	PlatformVersion string `json:"platform_version"`
+}
+
+type WorkflowExecutionError struct {
+	Code   string `json:"code"`
+	CellID string `json:"cellId"`
+	TS     string `json:"ts"`
+	Stack  string `json:"stack"`
+}
+
 // TODO: implement invoke workflow
 // CreateWorkflow Creates a new workflow within an organization’s project
 // This endpoint allows defining workflow steps, triggers, and settings, based on a supplied template
@@ -332,6 +364,55 @@ func (c *Client) GetWorkflowEmits(
 	var result GetWorkflowEmitsResponse
 	if err := unmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetWorkflowErrors Retrieve up to the last 100 events for a workflow that threw an error
+// The details of the error, along with the original event data, will be included
+func (c *Client) GetWorkflowErrors(
+	ctx context.Context,
+	id string,
+	expandEvent bool,
+	limit int,
+) (*GetWorkflowErrorsResponse, error) {
+	c.logger.Debug("getting workflow errors")
+
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "workflows", id, "$errors", "event_summaries"),
+	})
+
+	queryParams := url.Values{}
+	if expandEvent {
+		addQueryParams(queryParams, "expand", "event")
+	}
+	if limit > 0 {
+		addQueryParams(queryParams, "limit", strconv.Itoa(limit))
+	}
+
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get workflow emits request: %w", err)
+	}
+
+	resp, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request for get workflow errors reaquest: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		raw, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(raw))
+	}
+
+	var result GetWorkflowErrorsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding get workflow errors response: %w", err)
 	}
 
 	return &result, nil
