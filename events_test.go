@@ -95,6 +95,37 @@ func (suite *subscriptionsTestSuite) TestGetSourceEvents_Success() {
 	require.Equal(float64(11), resp.Data[0].Event["rowNumber"])
 }
 
+func (suite *subscriptionsTestSuite) TestDeleteSourceEvents_Success() {
+	require := suite.Require()
+	sourceID := "dc_test"
+	startID := "1745858986889-0"
+
+	expectedPath := "/sources/dc_test/events"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(expectedPath, r.URL.Path)
+		require.Equal(http.MethodDelete, r.Method)
+		require.Equal(startID, r.URL.Query().Get("start_id"))
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	restParsed, err := url.Parse(server.URL)
+	require.NoError(err)
+
+	suite.pipedreamClient.httpClient = server.Client()
+	suite.pipedreamClient.baseURL = restParsed
+
+	err = suite.pipedreamClient.DeleteSourceEvents(
+		context.Background(),
+		sourceID,
+		startID,
+		"",
+	)
+	require.NoError(err)
+}
+
 func TestEvents(t *testing.T) {
 	suite.Run(t, new(eventsTestSuite))
 }

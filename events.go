@@ -81,3 +81,48 @@ func (p *Client) GetSourceEvents(
 
 	return &respJson, nil
 }
+
+// DeleteSourceEvents deletes events for a source starting from startID (inclusive).
+func (p *Client) DeleteSourceEvents(
+	ctx context.Context,
+	sourceID,
+	startID,
+	endID string, // optional
+) error {
+	p.logger.Info("deleting source events")
+
+	if sourceID == "" || startID == "" {
+		return fmt.Errorf("both sourceID and startID are required")
+	}
+
+	endpointURL := p.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(p.baseURL.Path, "sources", sourceID, "events"),
+	})
+
+	queryParams := url.Values{}
+	addQueryParams(queryParams, "start_id", startID)
+
+	if endID != "" {
+		addQueryParams(queryParams, "end_id", endID)
+	}
+
+	endpointURL.RawQuery = queryParams.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete, endpointURL.String(), nil)
+	if err != nil {
+		return fmt.Errorf("creating delete source events request: %w", err)
+	}
+
+	resp, err := p.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return fmt.Errorf("executing delete source events request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
