@@ -236,7 +236,7 @@ func (c *Client) GetWorkspaceSources(
 
 	var result GetWorkspaceSourcesResponse
 	if err := unmarshalResponse(response, &result); err != nil {
-		return nil, fmt.Errorf("unmarshalling get workspace sources response:e: %w", err)
+		return nil, fmt.Errorf("unmarshalling get workspace sources response: %w", err)
 	}
 
 	return &result, nil
