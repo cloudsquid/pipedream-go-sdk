@@ -43,6 +43,33 @@ type Subscription struct {
 	EventID    string `json:"event_id"`
 }
 
+type GetWorkspaceSourcesResponse struct {
+	PageInfo PageInfo `json:"page_info"`
+	Data     []Source `json:"data"`
+}
+
+type Source struct {
+	ID              string          `json:"id"`
+	ComponentID     string          `json:"component_id"`
+	ConfiguredProps ConfiguredProps `json:"configured_props"`
+	Active          bool            `json:"active"`
+	CreatedAt       int64           `json:"created_at"`
+	UpdatedAt       int64           `json:"updated_at"`
+	Name            string          `json:"name"`
+	NameSlug        string          `json:"name_slug"`
+}
+
+type Data struct {
+	ID              string          `json:"id"`
+	ComponentID     string          `json:"component_id"`
+	ConfiguredProps ConfiguredProps `json:"configured_props"`
+	Active          bool            `json:"active"`
+	CreatedAt       int64           `json:"created_at"`
+	UpdatedAt       int64           `json:"updated_at"`
+	Name            string          `json:"name"`
+	NameSlug        string          `json:"name_slug"`
+}
+
 // GetWorkspace views your workspace’s current credit usage for the billing period in real time
 func (c *Client) GetWorkspace(
 	ctx context.Context,
@@ -78,7 +105,7 @@ func (c *Client) GetWorkspace(
 
 	var result GetWorkspaceResponse
 	if err := unmarshalResponse(response, &result); err != nil {
-		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
+		return nil, fmt.Errorf("unmarshalling get workspace response:e: %w", err)
 	}
 
 	return &result, nil
@@ -127,7 +154,7 @@ func (c *Client) GetWorkspaceConnectedAccounts(
 
 	var result GetWorkspaceConnectedAccountsResponse
 	if err := unmarshalResponse(response, &result); err != nil {
-		return nil, fmt.Errorf("unmarshalling get workflow accounts response:e: %w", err)
+		return nil, fmt.Errorf("unmarshalling get workspace accounts response:e: %w", err)
 	}
 
 	return &result, nil
@@ -138,7 +165,7 @@ func (c *Client) GetWorkspaceSubscriptions(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceSubscriptionsResponse, error) {
-	c.logger.Debug("get workspace subcriptions")
+	c.logger.Debug("get workspace subscriptions")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
@@ -168,7 +195,48 @@ func (c *Client) GetWorkspaceSubscriptions(
 
 	var result GetWorkspaceSubscriptionsResponse
 	if err := unmarshalResponse(response, &result); err != nil {
-		return nil, fmt.Errorf("unmarshalling get workflow subscriptions response:e: %w", err)
+		return nil, fmt.Errorf("unmarshalling get workspace subscriptions response:e: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetWorkspaceSources Retrieves all the event sources configured for a specific workspace
+func (c *Client) GetWorkspaceSources(
+	ctx context.Context,
+	orgID string,
+) (*GetWorkspaceSourcesResponse, error) {
+	c.logger.Debug("get workspace sources")
+
+	if orgID == "" {
+		return nil, fmt.Errorf("orgID is required")
+	}
+
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "workspaces", orgID, "sources"),
+	})
+
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get workspace sources request: %w", err)
+	}
+
+	response, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing get workspace sources request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		raw, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(raw))
+	}
+
+	var result GetWorkspaceSourcesResponse
+	if err := unmarshalResponse(response, &result); err != nil {
+		return nil, fmt.Errorf("unmarshalling get workspace sources response:e: %w", err)
 	}
 
 	return &result, nil
