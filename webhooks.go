@@ -85,7 +85,7 @@ func (c *Client) DeleteWebhook(
 		Path: path.Join(c.baseURL.Path, "webhooks", id),
 	})
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, baseURL.String(), nil)
 	if err != nil {
 		return fmt.Errorf("creating delete webhook request: %w", err)
 	}
