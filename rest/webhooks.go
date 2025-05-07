@@ -1,9 +1,10 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -37,18 +38,18 @@ func (c *Client) CreateWebhook(
 		return nil, fmt.Errorf("url is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "webhooks"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "webhooks"),
 	})
 
 	queryParams := url.Values{}
 
-	addQueryParams(queryParams, "url", endpoint)
+	internal.AddQueryParams(queryParams, "url", endpoint)
 	if name != "" {
-		addQueryParams(queryParams, "name", name)
+		internal.AddQueryParams(queryParams, "name", name)
 	}
 	if description != "" {
-		addQueryParams(queryParams, "description", description)
+		internal.AddQueryParams(queryParams, "description", description)
 	}
 	baseURL.RawQuery = queryParams.Encode()
 
@@ -81,8 +82,8 @@ func (c *Client) DeleteWebhook(
 	ctx context.Context,
 	id string,
 ) error {
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "webhooks", id),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "webhooks", id),
 	})
 
 	req, err := http.NewRequest(http.MethodDelete, baseURL.String(), nil)

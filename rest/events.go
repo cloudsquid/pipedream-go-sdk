@@ -1,8 +1,10 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,8 +13,8 @@ import (
 )
 
 type GetSourceEventsResponse struct {
-	PageInfo PageInfo      `json:"page_info"`
-	Data     []SourceEvent `json:"data"`
+	PageInfo connect.PageInfo `json:"page_info"`
+	Data     []SourceEvent    `json:"data"`
 }
 
 type SourceEvent struct {
@@ -32,25 +34,25 @@ type EventMetadata struct {
 }
 
 // GetSourceEvents retrieves up to the last 100 events emitted by a source
-func (p *Client) GetSourceEvents(
+func (c *Client) GetSourceEvents(
 	ctx context.Context,
 	sourceID string,
 	limit int,
 	expand bool,
 ) (*GetSourceEventsResponse, error) {
-	p.logger.Info("get source events", "sourceID", sourceID)
+	c.Logger.Info("get source events", "sourceID", sourceID)
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources", sourceID, "event_summaries")})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "sources", sourceID, "event_summaries")})
 
 	queryParams := url.Values{}
 
 	if limit > 0 {
-		addQueryParams(queryParams, "limit", strconv.Itoa(limit))
+		internal.AddQueryParams(queryParams, "limit", strconv.Itoa(limit))
 	}
 
 	if expand {
-		addQueryParams(queryParams, "expand", "event")
+		internal.AddQueryParams(queryParams, "expand", "event")
 	}
 
 	baseURL.RawQuery = queryParams.Encode()
@@ -62,7 +64,7 @@ func (p *Client) GetSourceEvents(
 		return nil, fmt.Errorf("creating get source events request %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaApiKey(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing get source events request: %w", err)
 	}
@@ -74,7 +76,7 @@ func (p *Client) GetSourceEvents(
 	}
 
 	var respJson GetSourceEventsResponse
-	if err := unmarshalResponse(response, &respJson); err != nil {
+	if err := internal.UnmarshalResponse(response, &respJson); err != nil {
 		return nil, fmt.Errorf(
 			"unmarshalling get source events response: %w", err)
 	}
@@ -83,27 +85,27 @@ func (p *Client) GetSourceEvents(
 }
 
 // DeleteSourceEvents deletes events for a source starting from startID (inclusive).
-func (p *Client) DeleteSourceEvents(
+func (c *Client) DeleteSourceEvents(
 	ctx context.Context,
 	sourceID,
 	startID,
 	endID string, // optional
 ) error {
-	p.logger.Info("deleting source events")
+	c.Logger.Info("deleting source events")
 
 	if sourceID == "" || startID == "" {
 		return fmt.Errorf("both sourceID and startID are required")
 	}
 
-	endpointURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources", sourceID, "events"),
+	endpointURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "sources", sourceID, "events"),
 	})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "start_id", startID)
+	internal.AddQueryParams(queryParams, "start_id", startID)
 
 	if endID != "" {
-		addQueryParams(queryParams, "end_id", endID)
+		internal.AddQueryParams(queryParams, "end_id", endID)
 	}
 
 	endpointURL.RawQuery = queryParams.Encode()
@@ -113,7 +115,7 @@ func (p *Client) DeleteSourceEvents(
 		return fmt.Errorf("creating delete source events request: %w", err)
 	}
 
-	resp, err := p.doRequestViaApiKey(ctx, req)
+	resp, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing delete source events request: %w", err)
 	}

@@ -1,9 +1,10 @@
-package pipedream
+package connect
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -42,13 +43,6 @@ type Credentials struct {
 	OauthUid         string `json:"oauth_uid,omitempty"`
 }
 
-type PageInfo struct {
-	TotalCount  int    `json:"total_count,omitempty"`
-	Count       int    `json:"count,omitempty"`
-	StartCursor string `json:"start_cursor,omitempty"`
-	EndCursor   string `json:"end_cursor,omitempty"`
-}
-
 type ListAccountsResponse struct {
 	PageInfo PageInfo   `json:"page_info"`
 	Data     []*Account `json:"data"`
@@ -60,25 +54,23 @@ type GetAccountResponse struct {
 
 // ListAccounts lists all accounts related to the currently set projectID
 // All the parameters are optional
-func (p *Client) ListAccounts(
+func (c *Client) ListAccounts(
 	ctx context.Context,
 	externalUserID string,
 	app string,
 	oauthAppId string,
 	includeCredentials bool,
 ) (*ListAccountsResponse, error) {
-	p.logger.Info("Listing accounts")
+	c.Logger.Info("Listing accounts")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "accounts")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
-	addQueryParams(queryParams, "app", app)
-	if oauthAppId != "" {
-		addQueryParams(queryParams, "oauth_app_id", oauthAppId)
-	}
-	addQueryParams(queryParams,
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "app", app)
+	internal.AddQueryParams(queryParams, "oauth_app_id", oauthAppId)
+	internal.AddQueryParams(queryParams,
 		"include_credentials",
 		strconv.FormatBool(includeCredentials),
 	)
@@ -91,7 +83,7 @@ func (p *Client) ListAccounts(
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -108,22 +100,22 @@ func (p *Client) ListAccounts(
 }
 
 // GetAccount Retrieve the account details for a specific account based on the account ID
-func (p *Client) GetAccount(
+func (c *Client) GetAccount(
 	ctx context.Context,
 	externalUserID string,
 	app string,
 	includeCredentials bool,
 	accountId string,
 ) (*GetAccountResponse, error) {
-	p.logger.Debug("getting an account's details")
+	c.Logger.Info("getting an account's details")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "accounts", accountId)})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
-	addQueryParams(queryParams, "app", app)
-	addQueryParams(
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "app", app)
+	internal.AddQueryParams(
 		queryParams,
 		"include_credentials",
 		strconv.FormatBool(includeCredentials),
@@ -137,7 +129,7 @@ func (p *Client) GetAccount(
 		return nil, fmt.Errorf("creating get account request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to get account: %w", err)
 	}
@@ -159,21 +151,21 @@ func (p *Client) GetAccount(
 }
 
 // DeleteAccount Delete a specific connected account for an end user, and any deployed triggers
-func (p *Client) DeleteAccount(
+func (c *Client) DeleteAccount(
 	ctx context.Context,
 	accountId string,
 ) error {
-	p.logger.Debug("deleting an account")
+	c.Logger.Info("deleting an account")
 
-	endpoint := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "accounts", accountId)}).String()
+	endpoint := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creating delete account request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to delete an account: %w", err)
 	}
@@ -187,21 +179,21 @@ func (p *Client) DeleteAccount(
 }
 
 // DeleteAccounts Delete all connected accounts for a specific app
-func (p *Client) DeleteAccounts(
+func (c *Client) DeleteAccounts(
 	ctx context.Context,
 	appID string,
 ) error {
-	p.logger.Debug("deleting all accounts for an app")
+	c.Logger.Info("deleting all accounts for an app")
 
-	endpoint := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "apps", appID, "accounts")}).String()
+	endpoint := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "apps", appID, "accounts")}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creating get account request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to get account: %w", err)
 	}
@@ -214,21 +206,21 @@ func (p *Client) DeleteAccounts(
 }
 
 // DeleteEndUser Delete an end user, all their connected accounts, and any deployed triggers.
-func (p *Client) DeleteEndUser(
+func (c *Client) DeleteEndUser(
 	ctx context.Context,
 	externalUserID string,
 ) error {
-	p.logger.Debug("deleting end user")
+	c.Logger.Info("deleting end user")
 
-	endpoint := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "users", externalUserID)}).String()
+	endpoint := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "users", externalUserID)}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creating delete end user request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing request to delete end usert: %w", err)
 	}

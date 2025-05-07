@@ -1,14 +1,13 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
 
 type appsTestSuite struct {
@@ -17,20 +16,15 @@ type appsTestSuite struct {
 	pipedreamClient *Client
 }
 
+type mockLogger struct{}
+
+func (l *mockLogger) Debug(msg string, keyvals ...any) {}
+func (l *mockLogger) Info(msg string, keyvals ...any)  {}
+func (l *mockLogger) Warn(msg string, keyvals ...any)  {}
+func (l *mockLogger) Error(msg string, keyvals ...any) {}
+
 func (suite *appsTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-	}
 }
 
 func (suite *appsTestSuite) TestListApps_Success() {
@@ -64,11 +58,9 @@ func (suite *appsTestSuite) TestListApps_Success() {
 	}))
 	defer server.Close()
 
-	baseParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = baseParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListApps(
 		context.Background(),
@@ -106,11 +98,9 @@ func (suite *appsTestSuite) TestGetApp_Success() {
 	}))
 	defer server.Close()
 
-	baseParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = baseParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetApp(
 		context.Background(),

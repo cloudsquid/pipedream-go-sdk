@@ -1,4 +1,4 @@
-package pipedream
+package rest
 
 import (
 	"context"
@@ -44,13 +44,13 @@ type Org struct {
 }
 
 // GetCurrentUser Retrieves information on the authenticated user
-func (p *Client) GetCurrentUser(
+func (c *Client) GetCurrentUser(
 	ctx context.Context,
 ) (*GetCurrentUserResponse, error) {
-	p.logger.Debug("getting current user info")
+	c.Logger.Debug("getting current user info")
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "users", "me")})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "users", "me")})
 
 	endpoint := baseURL.String()
 
@@ -59,7 +59,7 @@ func (p *Client) GetCurrentUser(
 		return nil, fmt.Errorf("creating get current user request: %w", err)
 	}
 
-	response, err := p.doRequestViaApiKey(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to get current user: %w", err)
 	}

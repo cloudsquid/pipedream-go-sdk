@@ -1,10 +1,11 @@
-package pipedream
+package connect
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
@@ -21,6 +22,13 @@ type Trigger struct {
 	UpdatedAt         int                `json:"updated_at"`
 	Name              string             `json:"name"`
 	NameSlug          string             `json:"name_slug"`
+}
+
+type PageInfo struct {
+	TotalCount  int    `json:"total_count,omitempty"`
+	Count       int    `json:"count,omitempty"`
+	StartCursor string `json:"start_cursor,omitempty"`
+	EndCursor   string `json:"end_cursor,omitempty"`
 }
 
 type TriggerList struct {
@@ -80,7 +88,7 @@ type TriggerWorkflowIDs struct {
 	WorkflowIDs []string `json:"workflow_ids,omitempty"`
 }
 
-func (p *Client) DeployTrigger(
+func (c *Client) DeployTrigger(
 	ctx context.Context,
 	componentKey string,
 	externalUserID string,
@@ -89,10 +97,10 @@ func (p *Client) DeployTrigger(
 	dynamicPropsID string, // OPTIONAL
 	workflowID string, // OPTIONAL
 ) (map[string]any, error) {
-	p.logger.Info("Deploying trigger")
+	c.Logger.Info("Deploying trigger")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "triggers", "deploy")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "triggers", "deploy")})
 
 	trigger := DeployTriggerRequest{
 		ComponentKey:    componentKey,
@@ -116,30 +124,30 @@ func (p *Client) DeployTrigger(
 		return nil, fmt.Errorf("creating new deploy trigger request: %w", err)
 	}
 
-	resp, err := p.doRequestViaOauth(ctx, req)
+	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing deploy trigger request: %w", err)
 	}
 
 	var response map[string]any
-	if err := unmarshalResponse(resp, &response); err != nil {
+	if err := internal.UnmarshalResponse(resp, &response); err != nil {
 		return nil, fmt.Errorf("unmarhalling response for trigger response: %w", err)
 	}
 
 	return response, nil
 }
 
-func (p *Client) ListDeployedTriggers(
+func (c *Client) ListDeployedTriggers(
 	ctx context.Context,
 	externalUserID string,
 ) (*TriggerList, error) {
-	p.logger.Info("List Deployed triggers")
+	c.Logger.Info("List Deployed triggers")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
 	baseURL.RawQuery = queryParams.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
@@ -147,31 +155,31 @@ func (p *Client) ListDeployedTriggers(
 		return nil, fmt.Errorf("creating new request to list deployed triggers: %w", err)
 	}
 
-	listResponse, err := p.doRequestViaOauth(ctx, req)
+	listResponse, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to list deployed triggers: %w", err)
 	}
 
 	var list TriggerList
-	if err := unmarshalResponse(listResponse, &list); err != nil {
+	if err := internal.UnmarshalResponse(listResponse, &list); err != nil {
 		return nil, fmt.Errorf("unmarshalling response to list: %w", err)
 	}
 
 	return &list, nil
 }
 
-func (p *Client) GetDeployedTrigger(
+func (c *Client) GetDeployedTrigger(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserId string,
 ) (*Trigger, error) {
-	p.logger.Info("Retrieving deployed trigger", "trigger", deployedComponentID)
+	c.Logger.Info("Retrieving deployed trigger", "trigger", deployedComponentID)
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID)})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID)})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserId)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserId)
 	baseURL.RawQuery = queryParams.Encode()
 
 	getRequest, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
@@ -179,29 +187,29 @@ func (p *Client) GetDeployedTrigger(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, getRequest)
+	response, err := c.doRequestViaOauth(ctx, getRequest)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to retrieve trigger: %w", err)
 	}
 
 	var trigger Trigger
-	if err := unmarshalResponse(response, &trigger); err != nil {
+	if err := internal.UnmarshalResponse(response, &trigger); err != nil {
 		return nil, fmt.Errorf("unmarshalling response to retrieve trigger: %w", err)
 	}
 
 	return &trigger, nil
 }
 
-func (p *Client) DeleteDeployedTrigger(
+func (c *Client) DeleteDeployedTrigger(
 	ctx context.Context,
 	deployedTriggerID string,
 	externalUserID string,
 ) error {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.connectURL.Path, p.projectID, "deployed-triggers", deployedTriggerID)})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedTriggerID)})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
 	baseURL.RawQuery = queryParams.Encode()
 
 	deleteRequest, err := http.NewRequest(http.MethodDelete, baseURL.String(), nil)
@@ -209,7 +217,7 @@ func (p *Client) DeleteDeployedTrigger(
 		return fmt.Errorf("creating new delete trigger request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, deleteRequest)
+	response, err := c.doRequestViaOauth(ctx, deleteRequest)
 	if err != nil {
 		return fmt.Errorf("executing delete trigger request: %w", err)
 	}
@@ -222,17 +230,17 @@ func (p *Client) DeleteDeployedTrigger(
 	}
 }
 
-func (p *Client) RetrieveTriggerEvents(
+func (c *Client) RetrieveTriggerEvents(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserID string,
 	numberOfEvents int,
 ) (*TriggerEventList, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID, "events")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "events")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
 	baseURL.RawQuery = queryParams.Encode()
 
 	eventsReq, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
@@ -240,13 +248,13 @@ func (p *Client) RetrieveTriggerEvents(
 		return nil, fmt.Errorf("creating new retrieve trigger events request: %w", err)
 	}
 
-	triggerResponse, err := p.doRequestViaOauth(ctx, eventsReq)
+	triggerResponse, err := c.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to retrieve trigger events: %w", err)
 	}
 
 	var triggerEventList TriggerEventList
-	if err := unmarshalResponse(triggerResponse, &triggerEventList); err != nil {
+	if err := internal.UnmarshalResponse(triggerResponse, &triggerEventList); err != nil {
 		return nil, fmt.Errorf("unmarshalling response for trigger events: %w", err)
 	}
 
@@ -254,16 +262,16 @@ func (p *Client) RetrieveTriggerEvents(
 }
 
 // ListTriggerWebhooks Retrieve the list of webhook URLs listening to a deployed trigger
-func (p *Client) ListTriggerWebhooks(
+func (c *Client) ListTriggerWebhooks(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserID string,
 ) (*TriggerWebhookURLs, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID, "webhooks")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
 	baseURL.RawQuery = queryParams.Encode()
 
 	eventsReq, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
@@ -271,28 +279,28 @@ func (p *Client) ListTriggerWebhooks(
 		return nil, fmt.Errorf("creating list trigger webhooks request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, eventsReq)
+	response, err := c.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to list trigger webhooks: %w", err)
 	}
 	defer response.Body.Close()
 
 	var webhookUrls TriggerWebhookURLs
-	if err := unmarshalResponse(response, &webhookUrls); err != nil {
+	if err := internal.UnmarshalResponse(response, &webhookUrls); err != nil {
 		return nil, fmt.Errorf("unmarshalling response for updating trigger webhooks: %w", err)
 	}
 	return &webhookUrls, nil
 }
 
 // UpdateTriggerWebhooks Updates the list of webhook URLs that will listen to a deployed trigger
-func (p *Client) UpdateTriggerWebhooks(
+func (c *Client) UpdateTriggerWebhooks(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserID string,
 	webhookURLs []string,
 ) (*TriggerWebhookURLs, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID, "webhooks")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks")})
 
 	body := UpdateTriggerWebhooksRequest{
 		ExternalUserID: externalUserID,
@@ -309,30 +317,30 @@ func (p *Client) UpdateTriggerWebhooks(
 		return nil, fmt.Errorf("creating update trigger webhooks request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, eventsReq)
+	response, err := c.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to update trigger webhooks: %w", err)
 	}
 	defer response.Body.Close()
 
 	var webhookUrls TriggerWebhookURLs
-	if err := unmarshalResponse(response, &webhookUrls); err != nil {
+	if err := internal.UnmarshalResponse(response, &webhookUrls); err != nil {
 		return nil, fmt.Errorf("unmarshalling response for updating trigger webhooks: %w", err)
 	}
 	return &webhookUrls, nil
 }
 
 // RetrieveTriggerWorkflows Retrieve the workflows listening to a deployed trigger
-func (p *Client) RetrieveTriggerWorkflows(
+func (c *Client) RetrieveTriggerWorkflows(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserID string,
 ) (*TriggerWorkflowIDs, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID, "workflows")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "external_user_id", externalUserID)
+	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
 	baseURL.RawQuery = queryParams.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, baseURL.String(), nil)
@@ -340,28 +348,28 @@ func (p *Client) RetrieveTriggerWorkflows(
 		return nil, fmt.Errorf("creating Retrieve trigger workflows request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to Retrieve trigger workflows: %w", err)
 	}
 	defer response.Body.Close()
 
 	var workflowIds TriggerWorkflowIDs
-	if err := unmarshalResponse(response, &workflowIds); err != nil {
+	if err := internal.UnmarshalResponse(response, &workflowIds); err != nil {
 		return nil, fmt.Errorf("unmarshalling response for Retrieving trigger workflows: %w", err)
 	}
 	return &workflowIds, nil
 }
 
 // UpdateTriggerWorkflows UUpdate the list of workflows that will listen to a deployed trigger
-func (p *Client) UpdateTriggerWorkflows(
+func (c *Client) UpdateTriggerWorkflows(
 	ctx context.Context,
 	deployedComponentID string,
 	externalUserID string,
 	workflowIDs []string,
 ) (*TriggerWorkflowIDs, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "deployed-triggers", deployedComponentID, "workflows")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows")})
 
 	body := UpdateTriggerWorkflowsRequest{
 		ExternalUserID: externalUserID,
@@ -378,14 +386,14 @@ func (p *Client) UpdateTriggerWorkflows(
 		return nil, fmt.Errorf("creating update trigger workflows request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, eventsReq)
+	response, err := c.doRequestViaOauth(ctx, eventsReq)
 	if err != nil {
 		return nil, fmt.Errorf("executing request to update trigger workflows: %w", err)
 	}
 	defer response.Body.Close()
 
 	var webhookIds TriggerWorkflowIDs
-	if err := unmarshalResponse(response, &webhookIds); err != nil {
+	if err := internal.UnmarshalResponse(response, &webhookIds); err != nil {
 		return nil, fmt.Errorf("unmarshalling response for updating trigger workflows: %w", err)
 	}
 	return &webhookIds, nil

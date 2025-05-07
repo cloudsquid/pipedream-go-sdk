@@ -1,9 +1,11 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,31 +13,31 @@ import (
 )
 
 type ListAppsResponse struct {
-	PageInfo PageInfo `json:"page_info,omitzero"`
-	Data     []*App   `json:"data,omitzero"`
+	PageInfo connect.PageInfo `json:"page_info,omitzero"`
+	Data     []*connect.App   `json:"data,omitzero"`
 }
 
 type GetAppResponse struct {
-	Data *App `json:"data,omitzero"`
+	Data *connect.App `json:"data,omitzero"`
 }
 
 // Retrieve a list of all apps available on Pipedream
-func (p *Client) ListApps(ctx context.Context, q string, hasComponents, hasActions, hasTriggers bool) (*ListAppsResponse, error) {
-	p.logger.Info("Listing apps")
+func (c *Client) ListApps(ctx context.Context, q string, hasComponents, hasActions, hasTriggers bool) (*ListAppsResponse, error) {
+	c.Logger.Info("Listing apps")
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "apps")})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "apps")})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "q", q)
+	internal.AddQueryParams(queryParams, "q", q)
 	if hasComponents {
-		addQueryParams(queryParams, "has_components", "1")
+		internal.AddQueryParams(queryParams, "has_components", "1")
 	}
 	if hasActions {
-		addQueryParams(queryParams, "has_actions", "1")
+		internal.AddQueryParams(queryParams, "has_actions", "1")
 	}
 	if hasTriggers {
-		addQueryParams(queryParams, "has_triggers", "1")
+		internal.AddQueryParams(queryParams, "has_triggers", "1")
 	}
 
 	baseURL.RawQuery = queryParams.Encode()
@@ -46,13 +48,14 @@ func (p *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	// can be done via Oauth too
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer response.Body.Close()
 
-	p.logger.Info("Response status code", "code", response.StatusCode)
+	c.Logger.Info("Response status code", "code", response.StatusCode)
 
 	var appList ListAppsResponse
 	err = json.NewDecoder(response.Body).Decode(&appList)
@@ -64,11 +67,11 @@ func (p *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 }
 
 // GetApp Retrieve metadata for a specific app
-func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, error) {
-	p.logger.Info("get an app")
+func (c *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, error) {
+	c.Logger.Info("get an app")
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "apps", appID)})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "apps", appID)})
 
 	endpoint := baseURL.String()
 
@@ -77,7 +80,7 @@ func (p *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, err
 		return nil, fmt.Errorf("creating get an app request %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing get an app request: %w", err)
 	}

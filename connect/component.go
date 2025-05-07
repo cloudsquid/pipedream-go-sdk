@@ -1,4 +1,4 @@
-package pipedream
+package connect
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
@@ -164,17 +164,17 @@ type ComponentSearchResponse struct {
 // externalUserID is the id defined by a third party or us
 // component Key is the componentID
 // propName is the key in the componentDetails
-func (p *Client) GetPropOptions(
+func (c *Client) GetPropOptions(
 	ctx context.Context,
 	propName string,
 	componentKey string,
 	externalUserID string,
 	configuredProps ConfiguredProps,
 ) (*PropOptions, error) {
-	p.logger.Info("Getting options for the prop")
+	c.Logger.Info("Getting options for the prop")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "components", "configure")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "components", "configure")})
 
 	endpoint := baseURL.String()
 
@@ -209,7 +209,7 @@ func (p *Client) GetPropOptions(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil,
 			fmt.Errorf("executing request to configure component %s for user %s: %w",
@@ -218,7 +218,7 @@ func (p *Client) GetPropOptions(
 	defer response.Body.Close()
 
 	var propOptions PropOptions
-	if err := unmarshalResponse(response, &propOptions); err != nil {
+	if err := internal.UnmarshalResponse(response, &propOptions); err != nil {
 		return nil, fmt.Errorf("unmarshalling prop options for component %s: %w",
 			componentKey, err)
 	}
@@ -232,17 +232,17 @@ func (p *Client) GetPropOptions(
 
 // https://pipedream.com/docs/connect/api/#retrieve-a-component
 // GetComponent retrieves a pipedream component and its configurable props
-func (p *Client) GetComponent(
+func (c *Client) GetComponent(
 	ctx context.Context,
 	componentKey string,
 	componentType ComponentType,
 ) (*GetComponentResponse, error) {
-	p.logger.Info("Getting component details",
+	c.Logger.Info("Getting component details",
 		"component", componentKey,
 		"type", componentType)
 
-	endpoint := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, string(componentType), componentKey)}).String()
+	endpoint := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), componentKey)}).String()
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -250,15 +250,14 @@ func (p *Client) GetComponent(
 			endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer response.Body.Close()
 
 	var component GetComponentResponse
-	// var component map[string]any
-	if err := unmarshalResponse(response, &component); err != nil {
+	if err := internal.UnmarshalResponse(response, &component); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for getting component details for component %s: %w",
 			componentKey, err)
@@ -269,23 +268,23 @@ func (p *Client) GetComponent(
 
 // https://pipedream.com/docs/connect/api/#list-components
 // ListComponents lists the components available in pipedream
-func (p *Client) ListComponents(
+func (c *Client) ListComponents(
 	ctx context.Context,
 	componentType ComponentType,
 	appName string,
 	searchTerm string,
 ) (*ListComponentResponse, error) {
-	p.logger.Info("Listing components",
+	c.Logger.Info("Listing components",
 		"componentType", componentType,
 		"appName", appName,
 	)
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, string(componentType))})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType))})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "app", appName)
-	addQueryParams(queryParams, "q", searchTerm)
+	internal.AddQueryParams(queryParams, "app", appName)
+	internal.AddQueryParams(queryParams, "q", searchTerm)
 
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()
@@ -295,14 +294,14 @@ func (p *Client) ListComponents(
 		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
 	}
 
-	resp, err := p.doRequestViaOauth(ctx, req)
+	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var respJson ListComponentResponse
-	if err := unmarshalResponse(resp, &respJson); err != nil {
+	if err := internal.UnmarshalResponse(resp, &respJson); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for listing components for app %s: %w",
 			appName, err)
@@ -314,7 +313,7 @@ func (p *Client) ListComponents(
 // ReloadComponentProps Reload the component’s props after configuring a dynamic prop,
 // based on the current component’s configuration
 // will use the component’s configuration to retrieve a new list of props depending on the value of the props that were configured so far
-func (p *Client) ReloadComponentProps(
+func (c *Client) ReloadComponentProps(
 	ctx context.Context,
 	componentType ComponentType,
 	configuredProps ConfiguredProps,
@@ -322,8 +321,8 @@ func (p *Client) ReloadComponentProps(
 	ComponentKey string,
 	dynamicPropsID string,
 ) (*ReloadComponentPropsResponse, error) {
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, string(componentType), "props")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), "props")})
 
 	endpoint := baseURL.String()
 
@@ -344,14 +343,14 @@ func (p *Client) ReloadComponentProps(
 		return nil, fmt.Errorf("creating reload component props request: %w", err)
 	}
 
-	resp, err := p.doRequestViaOauth(ctx, req)
+	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing reload component props request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var respJson ReloadComponentPropsResponse
-	if err := unmarshalResponse(resp, &respJson); err != nil {
+	if err := internal.UnmarshalResponse(resp, &respJson); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for reloading component props: %w", err)
 	}
@@ -359,19 +358,21 @@ func (p *Client) ReloadComponentProps(
 	return &respJson, nil
 }
 
+// TODO: MOVE TO REST
 // CreateComponent returns the components id, code, configurable_props, and other metadata you’ll need to deploy a source from this component
-func (p *Client) CreateComponent(
+/*
+func (c *Client) CreateComponent(
 	ctx context.Context,
 	componentCode string,
 	componentURL string,
 ) (*CreateComponentResponse, error) {
-	p.logger.Info("Create component")
+	c.Logger.Info("Create component")
 
 	if componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("either componentCode or componentURL must be provided")
 	}
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "components")})
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "components")})
 	endpoint := baseURL.String()
 
 	payload := &CreateComponentRequest{ComponentCode: componentCode, ComponentURL: componentURL}
@@ -386,7 +387,7 @@ func (p *Client) CreateComponent(
 		return nil, fmt.Errorf("creating create component request %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing create component request: %w", err)
 	}
@@ -398,7 +399,7 @@ func (p *Client) CreateComponent(
 	}
 
 	var respJson CreateComponentResponse
-	if err := unmarshalResponse(response, &respJson); err != nil {
+	if err := internal.unmarshalResponse(response, &respJson); err != nil {
 		return nil, fmt.Errorf("parsing reponse for create component request: %w", err)
 	}
 
@@ -406,14 +407,14 @@ func (p *Client) CreateComponent(
 }
 
 // GetComponentFromRegistry returns the same data as the endpoint for retrieving metadata on a component you own, but allows you to fetch data for any globally-published component
-func (p *Client) GetRegistryComponents(
+func (c *pipedream.Client) GetRegistryComponents(
 	ctx context.Context,
 	componentKey string,
 ) (*CreateComponentResponse, error) {
-	p.logger.Info("Getting component from registry")
+	c.logger.Info("Getting component from registry")
 
-	endpoint := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "components", "registry", componentKey)}).String()
+	endpoint := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "components", "registry", componentKey)}).String()
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -421,7 +422,7 @@ func (p *Client) GetRegistryComponents(
 			endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
@@ -433,7 +434,7 @@ func (p *Client) GetRegistryComponents(
 	}
 
 	var component CreateComponentResponse
-	if err := unmarshalResponse(response, &component); err != nil {
+	if err := internal.unmarshalResponse(response, &component); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for getting component details for component %s: %w",
 			componentKey, err)
@@ -443,32 +444,32 @@ func (p *Client) GetRegistryComponents(
 }
 
 // SearchRegistryComponents Search for components in the global registry with natural language
-func (p *Client) SearchRegistryComponents(
+func (c *pipedream.Client) SearchRegistryComponents(
 	ctx context.Context,
 	query string,
 	app string,
 	similarityThreshold int,
 	debug bool,
 ) (*ComponentSearchResponse, error) {
-	p.logger.Info("searching registry component")
+	c.logger.Info("searching registry component")
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "components", "search")})
+	baseURL := c.baseURL.ResolveReference(&url.URL{
+		Path: path.Join(c.baseURL.Path, "components", "search")})
 
 	if query == "" {
 		return nil, fmt.Errorf("query is required")
 	}
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "query", query)
+	internal.addQueryParams(queryParams, "query", query)
 	if app != "" {
-		addQueryParams(queryParams, "app", app)
+		internal.addQueryParams(queryParams, "app", app)
 	}
 	if similarityThreshold > 0 {
-		addQueryParams(queryParams, "similarity_threshold", fmt.Sprintf("%d", similarityThreshold))
+		internal.addQueryParams(queryParams, "similarity_threshold", fmt.Sprintf("%d", similarityThreshold))
 	}
 	if debug {
-		addQueryParams(queryParams, "debug", "true")
+		internal.addQueryParams(queryParams, "debug", "true")
 	}
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()
@@ -479,7 +480,7 @@ func (p *Client) SearchRegistryComponents(
 			endpoint, err)
 	}
 
-	response, err := p.doRequestViaOauth(ctx, req)
+	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing search registry component request: %w", err)
 	}
@@ -491,10 +492,11 @@ func (p *Client) SearchRegistryComponents(
 	}
 
 	var component ComponentSearchResponse
-	if err := unmarshalResponse(response, &component); err != nil {
+	if err := internal.unmarshalResponse(response, &component); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for search registry component request: %w", err)
 	}
 
 	return &component, nil
 }
+*/

@@ -1,16 +1,15 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
 
 type sourcesTestSuite struct {
@@ -21,20 +20,8 @@ type sourcesTestSuite struct {
 
 func (suite *sourcesTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-		apiKey: "dummy-key",
-	}
 }
+
 func (suite *sourcesTestSuite) TestCreateSource_Success() {
 	require := suite.Require()
 	expectedResponse := `{
@@ -72,11 +59,9 @@ func (suite *sourcesTestSuite) TestCreateSource_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.CreateSource(
 		context.Background(),
@@ -128,11 +113,9 @@ func (suite *sourcesTestSuite) TestUpdateSource_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateSource(
 		context.Background(),
@@ -161,13 +144,11 @@ func (suite *sourcesTestSuite) TestDeleteSource_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
-
-	err = suite.pipedreamClient.DeleteSource(
+	err := suite.pipedreamClient.DeleteSource(
 		context.Background(),
 		"dc_abc123",
 	)

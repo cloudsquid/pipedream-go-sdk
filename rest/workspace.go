@@ -1,8 +1,10 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,7 +25,7 @@ type Workspace struct {
 }
 
 type GetWorkspaceConnectedAccountsResponse struct {
-	PageInfo PageInfo           `json:"page_info"`
+	PageInfo connect.PageInfo   `json:"page_info"`
 	Data     []ConnectedAccount `json:"data"`
 }
 
@@ -44,30 +46,30 @@ type Subscription struct {
 }
 
 type GetWorkspaceSourcesResponse struct {
-	PageInfo PageInfo `json:"page_info"`
-	Data     []Source `json:"data"`
+	PageInfo connect.PageInfo `json:"page_info"`
+	Data     []Source         `json:"data"`
 }
 
 type Source struct {
-	ID              string          `json:"id"`
-	ComponentID     string          `json:"component_id"`
-	ConfiguredProps ConfiguredProps `json:"configured_props"`
-	Active          bool            `json:"active"`
-	CreatedAt       int64           `json:"created_at"`
-	UpdatedAt       int64           `json:"updated_at"`
-	Name            string          `json:"name"`
-	NameSlug        string          `json:"name_slug"`
+	ID              string                  `json:"id"`
+	ComponentID     string                  `json:"component_id"`
+	ConfiguredProps connect.ConfiguredProps `json:"configured_props"`
+	Active          bool                    `json:"active"`
+	CreatedAt       int64                   `json:"created_at"`
+	UpdatedAt       int64                   `json:"updated_at"`
+	Name            string                  `json:"name"`
+	NameSlug        string                  `json:"name_slug"`
 }
 
 type Data struct {
-	ID              string          `json:"id"`
-	ComponentID     string          `json:"component_id"`
-	ConfiguredProps ConfiguredProps `json:"configured_props"`
-	Active          bool            `json:"active"`
-	CreatedAt       int64           `json:"created_at"`
-	UpdatedAt       int64           `json:"updated_at"`
-	Name            string          `json:"name"`
-	NameSlug        string          `json:"name_slug"`
+	ID              string                  `json:"id"`
+	ComponentID     string                  `json:"component_id"`
+	ConfiguredProps connect.ConfiguredProps `json:"configured_props"`
+	Active          bool                    `json:"active"`
+	CreatedAt       int64                   `json:"created_at"`
+	UpdatedAt       int64                   `json:"updated_at"`
+	Name            string                  `json:"name"`
+	NameSlug        string                  `json:"name_slug"`
 }
 
 // GetWorkspace views your workspace’s current credit usage for the billing period in real time
@@ -75,14 +77,14 @@ func (c *Client) GetWorkspace(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceResponse, error) {
-	c.logger.Debug("get workspace")
+	c.Logger.Debug("get workspace")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workspaces", orgID),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workspaces", orgID),
 	})
 
 	endpoint := baseURL.String()
@@ -104,7 +106,7 @@ func (c *Client) GetWorkspace(
 	}
 
 	var result GetWorkspaceResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workspace response:e: %w", err)
 	}
 
@@ -117,21 +119,20 @@ func (c *Client) GetWorkspaceConnectedAccounts(
 	orgID string,
 	query string, // optional
 ) (*GetWorkspaceConnectedAccountsResponse, error) {
-	c.logger.Debug("get workspace connected accounts")
+	c.Logger.Debug("get workspace connected accounts")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workspaces", orgID, "accounts"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workspaces", orgID, "accounts"),
 	})
 
 	queryParams := url.Values{}
 
-	if query != "" {
-		addQueryParams(queryParams, "query", query)
-	}
+	internal.AddQueryParams(queryParams, "query", query)
+
 	baseURL.RawQuery = queryParams.Encode()
 
 	endpoint := baseURL.String()
@@ -153,7 +154,7 @@ func (c *Client) GetWorkspaceConnectedAccounts(
 	}
 
 	var result GetWorkspaceConnectedAccountsResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workspace accounts response:e: %w", err)
 	}
 
@@ -165,14 +166,14 @@ func (c *Client) GetWorkspaceSubscriptions(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceSubscriptionsResponse, error) {
-	c.logger.Debug("get workspace subscriptions")
+	c.Logger.Debug("get workspace subscriptions")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workspaces", orgID, "subscriptions"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workspaces", orgID, "subscriptions"),
 	})
 
 	endpoint := baseURL.String()
@@ -194,7 +195,7 @@ func (c *Client) GetWorkspaceSubscriptions(
 	}
 
 	var result GetWorkspaceSubscriptionsResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workspace subscriptions response:e: %w", err)
 	}
 
@@ -206,14 +207,14 @@ func (c *Client) GetWorkspaceSources(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceSourcesResponse, error) {
-	c.logger.Debug("get workspace sources")
+	c.Logger.Debug("get workspace sources")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workspaces", orgID, "sources"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workspaces", orgID, "sources"),
 	})
 
 	endpoint := baseURL.String()
@@ -235,7 +236,7 @@ func (c *Client) GetWorkspaceSources(
 	}
 
 	var result GetWorkspaceSourcesResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workspace sources response: %w", err)
 	}
 

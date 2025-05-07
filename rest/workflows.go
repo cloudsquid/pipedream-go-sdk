@@ -1,10 +1,12 @@
-package pipedream
+package rest
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -112,8 +114,8 @@ type GetWorkflowDetailsResponse struct {
 }
 
 type GetWorkflowEmitsResponse struct {
-	PageInfo PageInfo       `json:"page_info"`
-	Data     []EventSummary `json:"data"`
+	PageInfo connect.PageInfo `json:"page_info"`
+	Data     []EventSummary   `json:"data"`
 }
 
 type EventSummary struct {
@@ -134,8 +136,8 @@ type Metadata struct {
 }
 
 type GetWorkflowErrorsResponse struct {
-	PageInfo PageInfo        `json:"page_info"`
-	Data     []WorkflowError `json:"data"`
+	PageInfo connect.PageInfo `json:"page_info"`
+	Data     []WorkflowError  `json:"data"`
 }
 
 type WorkflowError struct {
@@ -177,10 +179,10 @@ func (c *Client) CreateWorkflow(
 	triggers []WorkflowTrigger,
 	settings *WorkflowSettings,
 ) (*CreateWorkflowResponse, error) {
-	c.logger.Debug("creating workflow")
+	c.Logger.Debug("creating workflow")
 
-	endpoint := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workflows"),
+	endpoint := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workflows"),
 	}).String()
 
 	payload := &CreateWorkflowRequest{
@@ -229,10 +231,10 @@ func (c *Client) UpdateWorkflow(
 	orgID string,
 	active bool,
 ) (*map[string]any, error) {
-	c.logger.Debug("update workflow")
+	c.Logger.Debug("update workflow")
 
-	endpoint := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workflows", id),
+	endpoint := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workflows", id),
 	}).String()
 
 	payload := &UpdateWorkflowRequest{
@@ -262,7 +264,7 @@ func (c *Client) UpdateWorkflow(
 	}
 
 	var result map[string]any
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling update workflow response:e: %w", err)
 	}
 
@@ -275,18 +277,18 @@ func (c *Client) GetWorkflowDetails(
 	id,
 	orgID string,
 ) (*GetWorkflowDetailsResponse, error) {
-	c.logger.Debug("get workflow details")
+	c.Logger.Debug("get workflow details")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workflows", id),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workflows", id),
 	})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "org_id", orgID)
+	internal.AddQueryParams(queryParams, "org_id", orgID)
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()
 
@@ -307,7 +309,7 @@ func (c *Client) GetWorkflowDetails(
 	}
 
 	var result GetWorkflowDetailsResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
 	}
 
@@ -322,24 +324,24 @@ func (c *Client) GetWorkflowEmits(
 	expandEvent bool,
 	limit int, // if 0 no limit is applied
 ) (*GetWorkflowEmitsResponse, error) {
-	c.logger.Debug("get workflow emits")
+	c.Logger.Debug("get workflow emits")
 
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workflows", id, "event_summaries"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workflows", id, "event_summaries"),
 	})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "org_id", orgID)
+	internal.AddQueryParams(queryParams, "org_id", orgID)
 
 	if expandEvent {
-		addQueryParams(queryParams, "expand", "event")
+		internal.AddQueryParams(queryParams, "expand", "event")
 	}
 
 	if limit > 0 {
-		addQueryParams(queryParams, "limit", strconv.Itoa(limit))
+		internal.AddQueryParams(queryParams, "limit", strconv.Itoa(limit))
 	}
 
 	baseURL.RawQuery = queryParams.Encode()
@@ -362,7 +364,7 @@ func (c *Client) GetWorkflowEmits(
 	}
 
 	var result GetWorkflowEmitsResponse
-	if err := unmarshalResponse(response, &result); err != nil {
+	if err := internal.UnmarshalResponse(response, &result); err != nil {
 		return nil, fmt.Errorf("unmarshalling get workflow details response:e: %w", err)
 	}
 
@@ -377,18 +379,18 @@ func (c *Client) GetWorkflowErrors(
 	expandEvent bool,
 	limit int,
 ) (*GetWorkflowErrorsResponse, error) {
-	c.logger.Debug("getting workflow errors")
+	c.Logger.Debug("getting workflow errors")
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "workflows", id, "$errors", "event_summaries"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "workflows", id, "$errors", "event_summaries"),
 	})
 
 	queryParams := url.Values{}
 	if expandEvent {
-		addQueryParams(queryParams, "expand", "event")
+		internal.AddQueryParams(queryParams, "expand", "event")
 	}
 	if limit > 0 {
-		addQueryParams(queryParams, "limit", strconv.Itoa(limit))
+		internal.AddQueryParams(queryParams, "limit", strconv.Itoa(limit))
 	}
 
 	baseURL.RawQuery = queryParams.Encode()

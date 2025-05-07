@@ -1,16 +1,13 @@
-package pipedream
+package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type Token struct {
@@ -35,61 +32,16 @@ type UserTokenResponse struct {
 	Token          string    `json:"token,omitempty"`
 }
 
-// https://pipedream.com/docs/connect/api/#create-a-new-token
-func (p *Client) AcquireUserToken(
-	ctx context.Context,
-	externalUserID string,
-	webhookURI string, // optional, left empty won't be configured
-) (*UserTokenResponse, error) {
-	log.Infof("Acquiring user token and registering webhook uri %s", webhookURI)
+func (c *Client) AcquireAccessToken() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	baseURL, err := url.Parse(pipedreamApiURL)
-	if err != nil {
-		return nil, fmt.Errorf("parsing %s as url: %w", pipedreamApiURL, err)
-	}
-	baseURL.Path = path.Join(baseURL.Path, p.projectID, "tokens")
-
-	request := UserTokenRequest{
-		ExternalUserID: externalUserID,
-		AllowedOrigins: p.allowedOrigins,
-		WebhookURI:     webhookURI,
-	}
-	body, err := json.Marshal(request)
-	if err != nil {
-		return nil,
-			fmt.Errorf("couldn't marshalling user token request: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodPost, baseURL.String(), bytes.NewReader(body))
-	if err != nil {
-		return nil,
-			fmt.Errorf("creating new request: %w", err)
-	}
-
-	response, err := p.doRequestViaOauth(ctx, req)
-	if err != nil {
-		return nil,
-			fmt.Errorf("executing request to get user token: %w", err)
-	}
-
-	var userToken *UserTokenResponse
-	if err := unmarshalResponse(response, &userToken); err != nil {
-		return nil, fmt.Errorf("couldn't unmarshal response: %w", err)
-	}
-
-	return userToken, nil
-}
-
-func (p *Client) acquireAccessToken() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.token != nil && time.Now().Before(p.token.ExpiresAt.Add(-1*time.Minute)) {
+	if c.token != nil && time.Now().Before(c.token.ExpiresAt.Add(-1*time.Minute)) {
 		return nil
 	}
 
-	endpoint := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join("oauth", "token"),
+	endpoint := c.connectURL.ResolveReference(&url.URL{
+		Path: path.Join(c.connectURL.Path, "oauth", "token"),
 	}).String()
 
 	type payload struct {
@@ -100,8 +52,8 @@ func (p *Client) acquireAccessToken() error {
 
 	bs, err := json.Marshal(&payload{
 		GrantType:    "client_credentials",
-		ClientID:     p.clientID,
-		ClientSecret: p.clientSecret,
+		ClientID:     c.clientID,
+		ClientSecret: c.clientSecret,
 	})
 	if err != nil {
 		return fmt.Errorf("couldn't marshal payload: %w", err)
@@ -113,7 +65,7 @@ func (p *Client) acquireAccessToken() error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	response, err := p.httpClient.Do(req)
+	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request for new token: %w", err)
 	}
@@ -128,9 +80,7 @@ func (p *Client) acquireAccessToken() error {
 	}
 
 	token.ExpiresAt = time.Now().Add(time.Second * time.Duration(token.ExpiresIn))
-	p.token = &token
-
-	p.logger.Info(token.AccessToken)
+	c.token = &token
 
 	return nil
 }

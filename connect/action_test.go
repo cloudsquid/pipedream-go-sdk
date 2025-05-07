@@ -1,17 +1,23 @@
-package pipedream
+package connect
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
+
+type mockLogger struct{}
+
+func (l *mockLogger) Debug(msg string, keyvals ...any) {}
+func (l *mockLogger) Info(msg string, keyvals ...any)  {}
+func (l *mockLogger) Warn(msg string, keyvals ...any)  {}
+func (l *mockLogger) Error(msg string, keyvals ...any) {}
 
 type actionTestSuite struct {
 	suite.Suite
@@ -21,21 +27,9 @@ type actionTestSuite struct {
 
 func (suite *actionTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-	}
 }
 
-func (suite *accountsTestSuite) TestInvokeAction_Success() {
+func (suite *actionTestSuite) TestInvokeAction_Success() {
 	require := suite.Require()
 	componentKey := "gitlab-new-issue"
 	externalUserID := "jverce"
@@ -63,24 +57,33 @@ func (suite *accountsTestSuite) TestInvokeAction_Success() {
 	expectedPath := "/project-abc/actions/run"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodPost, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		body, err := io.ReadAll(r.Body)
-		require.NoError(err)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.Method == http.MethodPost && r.URL.Path == expectedPath:
+			require.Equal(http.MethodPost, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(err)
 
-		var reqPayload InvokeActionRequest
-		err = json.Unmarshal(body, &reqPayload)
+			var reqPayload InvokeActionRequest
+			err = json.Unmarshal(body, &reqPayload)
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
+
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.InvokeAction(
 		context.Background(),

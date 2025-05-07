@@ -1,10 +1,11 @@
-package pipedream
+package connect
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
@@ -19,16 +20,16 @@ type InvokeActionRequest struct {
 	DynamicPropsID string `json:"dynamic_props_id,omitempty"`
 }
 
-func (p *Client) InvokeAction(
+func (c *Client) InvokeAction(
 	ctx context.Context,
 	componentKey string,
 	externalUserID string,
 	props ConfiguredProps,
 ) (map[string]any, error) {
-	p.logger.Info("Invoking action")
+	c.Logger.Info("Invoking action")
 
-	baseURL := p.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(p.connectURL.Path, p.projectID, "actions", "run")})
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "actions", "run")})
 
 	invokeActionReq := InvokeActionRequest{
 		ID:              componentKey,
@@ -49,13 +50,13 @@ func (p *Client) InvokeAction(
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	resp, err := p.doRequestViaOauth(ctx, req)
+	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing invoke action request: %w", err)
 	}
 
 	var response map[string]any
-	if err := unmarshalResponse(resp, &response); err != nil {
+	if err := internal.UnmarshalResponse(resp, &response); err != nil {
 		return nil, fmt.Errorf("unmarshalling invoke action response: %w", err)
 	}
 

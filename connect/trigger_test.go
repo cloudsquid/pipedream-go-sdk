@@ -1,16 +1,15 @@
-package pipedream
+package connect
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
 
 type triggerTestSuite struct {
@@ -21,18 +20,6 @@ type triggerTestSuite struct {
 
 func (suite *triggerTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-	}
 }
 
 func (suite *triggerTestSuite) TestDeployTrigger_Success() {
@@ -79,28 +66,36 @@ func (suite *triggerTestSuite) TestDeployTrigger_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodPost, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		body, err := io.ReadAll(r.Body)
-		require.NoError(err)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodPost, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(err)
 
-		var reqBody DeployTriggerRequest
-		err = json.Unmarshal(body, &reqBody)
-		require.NoError(err)
+			var reqBody DeployTriggerRequest
+			err = json.Unmarshal(body, &reqBody)
+			require.NoError(err)
 
-		require.Equal(componentKey, reqBody.ComponentKey)
-		require.Equal(externalUserID, reqBody.ExternalUserID)
-		require.Equal(webhookURL, reqBody.WebhookURL)
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			require.Equal(componentKey, reqBody.ComponentKey)
+			require.Equal(externalUserID, reqBody.ExternalUserID)
+			require.Equal(webhookURL, reqBody.WebhookURL)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.DeployTrigger(
 		context.Background(),
@@ -154,20 +149,28 @@ func (suite *triggerTestSuite) TestListDeployedTriggers_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal("jay", r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal("jay", r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListDeployedTriggers(
 		context.Background(),
@@ -211,20 +214,28 @@ func (suite *triggerTestSuite) TestGetDeployedTrigger_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetDeployedTrigger(
 		context.Background(),
@@ -245,21 +256,29 @@ func (suite *triggerTestSuite) TestDeleteDeployedTrigger_Success() {
 	expectedPath := "/project-abc/deployed-triggers/component_id"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteDeployedTrigger(
+	err := suite.pipedreamClient.DeleteDeployedTrigger(
 		context.Background(),
 		deployedComponentID,
 		externalUserID,
@@ -299,20 +318,28 @@ func (suite *triggerTestSuite) TestRetrieveTriggerEvents_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal("jay", r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal("jay", r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.RetrieveTriggerEvents(
 		context.Background(),
@@ -341,20 +368,28 @@ func (suite *triggerTestSuite) TestListTriggerWebhooks_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal("jay", r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal("jay", r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListTriggerWebhooks(
 		context.Background(),
@@ -384,29 +419,37 @@ func (suite *triggerTestSuite) TestUpdateTriggerWebhooks_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodPut, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodPut, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(err)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(err)
 
-		var reqBody UpdateTriggerWebhooksRequest
-		err = json.Unmarshal(body, &reqBody)
-		require.NoError(err)
+			var reqBody UpdateTriggerWebhooksRequest
+			err = json.Unmarshal(body, &reqBody)
+			require.NoError(err)
 
-		require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
-		require.Equal(expectedRequest.WebhookURLs, reqBody.WebhookURLs)
+			require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
+			require.Equal(expectedRequest.WebhookURLs, reqBody.WebhookURLs)
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateTriggerWebhooks(
 		context.Background(),
@@ -434,20 +477,28 @@ func (suite *triggerTestSuite) TestRetrieveTriggerWorkflows_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
-		require.Equal("jay", r.URL.Query().Get("external_user_id"))
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+			require.Equal("jay", r.URL.Query().Get("external_user_id"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.RetrieveTriggerWorkflows(
 		context.Background(),
@@ -477,29 +528,37 @@ func (suite *triggerTestSuite) TestUpdateTriggerWorkflows_Success() {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodPut, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodPut, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(err)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(err)
 
-		var reqBody UpdateTriggerWorkflowsRequest
-		err = json.Unmarshal(body, &reqBody)
-		require.NoError(err)
+			var reqBody UpdateTriggerWorkflowsRequest
+			err = json.Unmarshal(body, &reqBody)
+			require.NoError(err)
 
-		require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
-		require.Equal(expectedRequest.WorkflowIDs, reqBody.WorkflowIDs)
+			require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
+			require.Equal(expectedRequest.WorkflowIDs, reqBody.WorkflowIDs)
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateTriggerWorkflows(
 		context.Background(),

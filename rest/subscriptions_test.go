@@ -1,13 +1,12 @@
-package pipedream
+package rest
 
 import (
 	"context"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
 
 type subscriptionsTestSuite struct {
@@ -18,19 +17,6 @@ type subscriptionsTestSuite struct {
 
 func (suite *subscriptionsTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-		apiKey: "dummy-key",
-	}
 }
 
 func (suite *subscriptionsTestSuite) TestSubscribeToEmitter_Success() {
@@ -52,13 +38,11 @@ func (suite *subscriptionsTestSuite) TestSubscribeToEmitter_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
-
-	err = suite.pipedreamClient.SubscribeToEmitter(
+	err := suite.pipedreamClient.SubscribeToEmitter(
 		context.Background(),
 		emitterID,
 		listenerID,
@@ -84,13 +68,11 @@ func (suite *subscriptionsTestSuite) TestAutoSubscribeToEvent_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
-
-	err = suite.pipedreamClient.AutoSubscribeToEvent(
+	err := suite.pipedreamClient.AutoSubscribeToEvent(
 		context.Background(),
 		eventName,
 		listenerID,
@@ -115,13 +97,11 @@ func (suite *subscriptionsTestSuite) TestDeleteSubscription_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
-
-	err = suite.pipedreamClient.DeleteSubscription(
+	err := suite.pipedreamClient.DeleteSubscription(
 		context.Background(),
 		emitterID,
 		listenerID,

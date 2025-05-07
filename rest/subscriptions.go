@@ -1,8 +1,9 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
@@ -18,22 +19,22 @@ func (c *Client) SubscribeToEmitter(
 	listenerID,
 	eventName string, // optional
 ) error {
-	c.logger.Debug("creating subscription to emitter request")
+	c.Logger.Debug("creating subscription to emitter request")
 
 	if emitterID == "" || listenerID == "" {
 		return fmt.Errorf("emitter_id and listener_id are required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "subscriptions"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "subscriptions"),
 	})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "emitter_id", emitterID)
-	addQueryParams(queryParams, "listener_id", listenerID)
+	internal.AddQueryParams(queryParams, "emitter_id", emitterID)
+	internal.AddQueryParams(queryParams, "listener_id", listenerID)
 
 	if eventName != "" {
-		addQueryParams(queryParams, "event_name", eventName)
+		internal.AddQueryParams(queryParams, "event_name", eventName)
 	}
 
 	baseURL.RawQuery = queryParams.Encode()
@@ -63,19 +64,19 @@ func (c *Client) AutoSubscribeToEvent(
 	eventName string,
 	listenerID string,
 ) error {
-	c.logger.Debug("creating auto-subscription to event request")
+	c.Logger.Debug("creating auto-subscription to event request")
 
 	if eventName == "" || listenerID == "" {
 		return fmt.Errorf("event_name and listener_id are required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "auto_subscriptions"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "auto_subscriptions"),
 	})
 
 	queryParams := url.Values{}
-	addQueryParams(queryParams, "event_name", eventName)
-	addQueryParams(queryParams, "listener_id", listenerID)
+	internal.AddQueryParams(queryParams, "event_name", eventName)
+	internal.AddQueryParams(queryParams, "listener_id", listenerID)
 
 	baseURL.RawQuery = queryParams.Encode()
 
@@ -106,24 +107,21 @@ func (c *Client) DeleteSubscription(
 	listenerID,
 	eventName string,
 ) error {
-	c.logger.Debug("creating delete subscription request")
+	c.Logger.Debug("creating delete subscription request")
 
 	if emitterID == "" || listenerID == "" {
 		return fmt.Errorf("emitter_id and listener_id are required")
 	}
 
-	baseURL := c.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(c.baseURL.Path, "subscriptions"),
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "subscriptions"),
 	})
 
 	queryParams := url.Values{}
 
-	addQueryParams(queryParams, "emitter_id", emitterID)
-	addQueryParams(queryParams, "listener_id", listenerID)
-
-	if eventName != "" {
-		addQueryParams(queryParams, "event_name", eventName)
-	}
+	internal.AddQueryParams(queryParams, "emitter_id", emitterID)
+	internal.AddQueryParams(queryParams, "listener_id", listenerID)
+	internal.AddQueryParams(queryParams, "event_name", eventName)
 
 	baseURL.RawQuery = queryParams.Encode()
 

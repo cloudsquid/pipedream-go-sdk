@@ -1,10 +1,11 @@
-package pipedream
+package rest
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
@@ -54,20 +55,20 @@ type TimerSchedule struct {
 
 // CreateSource Event run code to collect events from an API, or receive events via webhooks, emitting those events for use on Pipedream
 // Event sources can function as workflow triggers
-func (p *Client) CreateSource(
+func (c *Client) CreateSource(
 	ctx context.Context,
 	componentID,
 	componentCode,
 	componentURL,
 	name string,
 ) (*CreateSourceResponse, error) {
-	p.logger.Info("creating source")
+	c.Logger.Info("creating source")
 
 	if componentID == "" && componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
 	}
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources")})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "sources")})
 	endpoint := baseURL.String()
 
 	body := &CreateSourceRequest{
@@ -87,14 +88,14 @@ func (p *Client) CreateSource(
 		return nil, fmt.Errorf("creating creating source for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaApiKey(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing creating source request: %w", err)
 	}
 	defer response.Body.Close()
 
 	var source CreateSourceResponse
-	if err := unmarshalResponse(response, &source); err != nil {
+	if err := internal.UnmarshalResponse(response, &source); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for creating source request: %w", err)
 	}
@@ -103,7 +104,7 @@ func (p *Client) CreateSource(
 }
 
 // UpdateSource updates a source
-func (p *Client) UpdateSource(
+func (c *Client) UpdateSource(
 	ctx context.Context,
 	sourceID,
 	componentID,
@@ -112,13 +113,13 @@ func (p *Client) UpdateSource(
 	name string,
 	active bool,
 ) (*CreateSourceResponse, error) {
-	p.logger.Info("updating source")
+	c.Logger.Info("updating source")
 
 	if componentID == "" && componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
 	}
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources", sourceID)})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "sources", sourceID)})
 	endpoint := baseURL.String()
 
 	body := &UpdateSourceRequest{
@@ -139,14 +140,14 @@ func (p *Client) UpdateSource(
 		return nil, fmt.Errorf("creating updating source for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaApiKey(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("executing updating source request: %w", err)
 	}
 	defer response.Body.Close()
 
 	var source CreateSourceResponse
-	if err := unmarshalResponse(response, &source); err != nil {
+	if err := internal.UnmarshalResponse(response, &source); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for updating source request: %w", err)
 	}
@@ -155,14 +156,14 @@ func (p *Client) UpdateSource(
 }
 
 // DeleteSource deletes a source
-func (p *Client) DeleteSource(
+func (c *Client) DeleteSource(
 	ctx context.Context,
 	sourceID string,
 ) error {
-	p.logger.Info("deleting source")
+	c.Logger.Info("deleting source")
 
-	baseURL := p.baseURL.ResolveReference(&url.URL{
-		Path: path.Join(p.baseURL.Path, "sources", sourceID)})
+	baseURL := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "sources", sourceID)})
 	endpoint := baseURL.String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
@@ -170,7 +171,7 @@ func (p *Client) DeleteSource(
 		return fmt.Errorf("creating deleting source for endpoint %s: %w", endpoint, err)
 	}
 
-	response, err := p.doRequestViaApiKey(ctx, req)
+	response, err := c.doRequestViaApiKey(ctx, req)
 	if err != nil {
 		return fmt.Errorf("executing deleting source request: %w", err)
 	}

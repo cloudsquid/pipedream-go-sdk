@@ -1,22 +1,14 @@
-package pipedream
+package connect
 
 import (
 	"context"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
-
-type mockLogger struct{}
-
-func (l *mockLogger) Debug(msg string, keyvals ...any) {}
-func (l *mockLogger) Info(msg string, keyvals ...any)  {}
-func (l *mockLogger) Warn(msg string, keyvals ...any)  {}
-func (l *mockLogger) Error(msg string, keyvals ...any) {}
 
 type accountsTestSuite struct {
 	suite.Suite
@@ -26,18 +18,6 @@ type accountsTestSuite struct {
 
 func (suite *accountsTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-	}
 }
 
 func (suite *accountsTestSuite) TestListAccounts_Success() {
@@ -68,25 +48,34 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 	expectedPath := "/project-abc/accounts"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
 
-		require.Equal("github", r.URL.Query().Get("app"))
-		require.Equal("user-123", r.URL.Query().Get("external_user_id"))
-		require.Equal("oauth-789", r.URL.Query().Get("oauth_app_id"))
-		require.Equal("true", r.URL.Query().Get("include_credentials"))
-		require.Equal("application/json", r.Header.Get("Content-Type"))
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			require.Equal("github", r.URL.Query().Get("app"))
+			require.Equal("user-123", r.URL.Query().Get("external_user_id"))
+			require.Equal("oauth-789", r.URL.Query().Get("oauth_app_id"))
+			require.Equal("true", r.URL.Query().Get("include_credentials"))
+			require.Equal("application/json", r.Header.Get("Content-Type"))
+
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListAccounts(
 		context.Background(),
@@ -154,13 +143,9 @@ func (suite *accountsTestSuite) TestListAccounts_RefreshAccessToken_Success() {
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-	suite.pipedreamClient.baseURL = connectParsed
-	suite.pipedreamClient.token.ExpiresAt = time.Now()
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListAccounts(
 		context.Background(),
@@ -195,23 +180,31 @@ func (suite *accountsTestSuite) TestGetAccount_Success() {
 	expectedPath := "/project-abc/accounts/apn_XehyZPr"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		require.Equal("github", r.URL.Query().Get("app"))
-		require.Equal("user-123", r.URL.Query().Get("external_user_id"))
-		require.Equal("false", r.URL.Query().Get("include_credentials"))
+			require.Equal("github", r.URL.Query().Get("app"))
+			require.Equal("user-123", r.URL.Query().Get("external_user_id"))
+			require.Equal("false", r.URL.Query().Get("include_credentials"))
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetAccount(
 		context.Background(),
@@ -232,23 +225,31 @@ func (suite *accountsTestSuite) TestGetAccount_Failure() {
 	expectedError := fmt.Errorf("unexpected status code %d: %s", http.StatusNotFound, expectedResponse)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodGet, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodGet, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		require.Equal("github", r.URL.Query().Get("app"))
-		require.Equal("user-123", r.URL.Query().Get("external_user_id"))
-		require.Equal("false", r.URL.Query().Get("include_credentials"))
+			require.Equal("github", r.URL.Query().Get("app"))
+			require.Equal("user-123", r.URL.Query().Get("external_user_id"))
+			require.Equal("false", r.URL.Query().Get("include_credentials"))
 
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = fmt.Fprint(w, expectedResponse)
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = fmt.Fprint(w, expectedResponse)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetAccount(
 		context.Background(),
@@ -267,20 +268,28 @@ func (suite *accountsTestSuite) TestDeleteAccount_Success() {
 	expectedPath := "/project-abc/accounts/apn_XehyZPr"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteAccount(
+	err := suite.pipedreamClient.DeleteAccount(
 		context.Background(),
 		"apn_XehyZPr",
 	)
@@ -294,23 +303,28 @@ func (suite *accountsTestSuite) TestDeleteAccount_Failure() {
 	expectedError := fmt.Errorf("expected status %d, got %d", http.StatusNoContent, http.StatusNotFound)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer server.Close()
 
-	original := pipedreamApiURL
-	pipedreamApiURL = server.URL
-	defer func() { pipedreamApiURL = original }()
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-	err = suite.pipedreamClient.DeleteAccount(
+	err := suite.pipedreamClient.DeleteAccount(
 		context.Background(),
 		"apn_XehyZPr",
 	)
@@ -323,20 +337,28 @@ func (suite *accountsTestSuite) TestDeleteAccounts_Success() {
 	expectedPath := "/project-abc/apps/app_346/accounts"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteAccounts(
+	err := suite.pipedreamClient.DeleteAccounts(
 		context.Background(),
 		"app_346",
 	)
@@ -350,20 +372,28 @@ func (suite *accountsTestSuite) TestDeleteAccounts_Failure() {
 	expectedError := fmt.Errorf("expected status %d, got %d", http.StatusNoContent, http.StatusNotFound)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteAccounts(
+	err := suite.pipedreamClient.DeleteAccounts(
 		context.Background(),
 		"app_346",
 	)
@@ -376,20 +406,28 @@ func (suite *accountsTestSuite) TestEndUser_Success() {
 	expectedPath := "/project-abc/users/user-123"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
 
-		w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteEndUser(
+	err := suite.pipedreamClient.DeleteEndUser(
 		context.Background(),
 		"user-123",
 	)
@@ -403,20 +441,29 @@ func (suite *accountsTestSuite) TestEndUser_Failure() {
 	expectedError := fmt.Errorf("expected status %d, got %d", http.StatusNoContent, http.StatusNotFound)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(http.MethodDelete, r.Method)
-		require.Equal(expectedPath, r.URL.Path)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == oathPath:
+			w.WriteHeader(http.StatusOK)
+			_, _ = fmt.Fprint(w, `{
+				"access_token": "new-access-token",
+				"expires_in": 3600
+			}`)
+			return
+		case r.URL.Path == expectedPath:
 
-		w.WriteHeader(http.StatusNotFound)
+			require.Equal(http.MethodDelete, r.Method)
+			require.Equal(expectedPath, r.URL.Path)
+
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer server.Close()
 
-	connectParsed, err := url.Parse(server.URL)
-	require.NoError(err)
+	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+		"", nil, server.URL, "")
+	suite.pipedreamClient = &Client{Client: base}
 
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.connectURL = connectParsed
-
-	err = suite.pipedreamClient.DeleteEndUser(
+	err := suite.pipedreamClient.DeleteEndUser(
 		context.Background(),
 		"user-123",
 	)

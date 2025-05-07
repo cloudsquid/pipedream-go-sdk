@@ -1,16 +1,15 @@
-package pipedream
+package rest
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudsquid/pipedream-go-sdk/client"
 	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
-	"time"
 )
 
 type workflowsTestSuite struct {
@@ -21,19 +20,6 @@ type workflowsTestSuite struct {
 
 func (suite *workflowsTestSuite) SetupTest() {
 	suite.ctx = context.Background()
-	suite.pipedreamClient = &Client{
-		projectID:   "project-abc",
-		environment: "development",
-		token: &Token{
-			AccessToken: "dummy-token",
-			TokenType:   "Bearer",
-			ExpiresIn:   3600,
-			CreatedAt:   int(time.Now().Unix()),
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
-		},
-		logger: &mockLogger{},
-		apiKey: "dummy-key",
-	}
 }
 
 func (suite *workflowsTestSuite) TestCreateWorkflow_Success() {
@@ -135,11 +121,9 @@ func (suite *workflowsTestSuite) TestCreateWorkflow_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.CreateWorkflow(
 		context.Background(),
@@ -223,11 +207,9 @@ func (suite *workflowsTestSuite) TestUpdateWorkflow_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateWorkflow(
 		context.Background(),
@@ -287,11 +269,9 @@ func (suite *workflowsTestSuite) TestGetWorkflowDetails_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetWorkflowDetails(
 		context.Background(),
@@ -345,11 +325,9 @@ func (suite *workflowsTestSuite) TestGetWorkflowEmits_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetWorkflowEmits(
 		context.Background(),
@@ -412,11 +390,9 @@ func (suite *workflowsTestSuite) TestGetWorkflowErrors_Success() {
 	}))
 	defer server.Close()
 
-	restParsed, err := url.Parse(server.URL)
-	require.NoError(err)
-
-	suite.pipedreamClient.httpClient = server.Client()
-	suite.pipedreamClient.baseURL = restParsed
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetWorkflowErrors(
 		context.Background(),
