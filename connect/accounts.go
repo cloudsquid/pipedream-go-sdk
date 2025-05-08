@@ -85,7 +85,7 @@ func (c *Client) ListAccounts(
 
 	response, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("executing request: %w", err)
+		return nil, fmt.Errorf("executing list account request: %w", err)
 	}
 	defer response.Body.Close()
 

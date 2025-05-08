@@ -40,8 +40,8 @@ func (c *Client) AcquireAccessToken() error {
 		return nil
 	}
 
-	endpoint := c.connectURL.ResolveReference(&url.URL{
-		Path: path.Join(c.connectURL.Path, "oauth", "token"),
+	endpoint := c.restURL.ResolveReference(&url.URL{
+		Path: path.Join(c.restURL.Path, "oauth", "token"),
 	}).String()
 
 	type payload struct {
