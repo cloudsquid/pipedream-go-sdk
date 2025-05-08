@@ -18,3 +18,12 @@ This is a Go SDK for interacting with [Pipedream](https://pipedream.com)'s APIs,
 
 ```bash
 go get github.com/cloudsquid/pipedream-go-sdk
+```
+
+---
+## Examples
+
+Explore usage examples for both API groups:
+
+- [Connect API Examples](examples/connect)
+- [REST API Examples](examples/rest)

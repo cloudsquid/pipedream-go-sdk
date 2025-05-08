@@ -75,6 +75,54 @@ func (suite *componentTestSuite) TestCreateComponent_Success() {
 	require.Equal(resp.Data.Name, "rss")
 }
 
+func (suite *componentTestSuite) TestGetComponents_Success() {
+	require := suite.Require()
+
+	expectedPath := "/components/my-component"
+
+	expectedResponse := `{
+	  "data": {
+		"id": "sc_JDi8EB",
+		"code": "component code here",
+		"code_hash": "685c7a680d055eaf505b08d5d814feef9fabd516d5960837d2e0838d3e1c9ed1",
+		"name": "rss",
+		"version": "0.0.1",
+		"configurable_props": [
+		  {
+			"name": "url",
+			"type": "string",
+			"label": "Feed URL",
+			"description": "Enter the URL for any public RSS feed."
+		  }
+		],
+		"created_at": 1588866900,
+		"updated_at": 1588866900
+	  }
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(http.MethodGet, r.Method)
+		require.Equal(expectedPath, r.URL.Path)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, expectedResponse)
+	}))
+	defer server.Close()
+
+	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+		"", nil, "", server.URL)
+	suite.pipedreamClient = &Client{Client: base}
+
+	resp, err := suite.pipedreamClient.GetComponent(
+		context.Background(),
+		"my-component",
+	)
+
+	require.NoError(err)
+	require.NotNil(resp)
+	require.Equal("rss", resp.Data.Name)
+}
+
 func (suite *componentTestSuite) TestGetRegistryComponents_Success() {
 	require := suite.Require()
 

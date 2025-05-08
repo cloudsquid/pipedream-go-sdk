@@ -35,7 +35,7 @@ type ConfigurableProp struct {
 	ReloadProps    bool   `json:"reloadProps,omitempty"`
 }
 
-type NewComponent struct {
+type Component struct {
 	ID                string             `json:"id"`
 	Code              string             `json:"code"`
 	CodeHash          string             `json:"code_hash"`
@@ -47,12 +47,16 @@ type NewComponent struct {
 }
 
 type CreateComponentResponse struct {
-	Data *NewComponent `json:"data,omitempty"`
+	Data *Component `json:"data,omitempty"`
 }
 
 type ComponentSearchResponse struct {
 	Sources []string `json:"sources"`
 	Actions []string `json:"actions"`
+}
+
+type GetComponentResponse struct {
+	Data Component `json:"data"`
 }
 
 // CreateComponent returns the components id, code, configurable_props, and other metadata you’ll need to deploy a source from this component
@@ -137,6 +141,41 @@ func (c *Client) GetRegistryComponents(
 	}
 
 	return &component, nil
+}
+
+// GetComponent Retrieve a component saved or published in your account using its saved component ID or key
+// This endpoint returns the component’s metadata and configurable props
+func (c *Client) GetComponent(
+	ctx context.Context,
+	keyOrID string,
+) (*GetComponentResponse, error) {
+	c.Logger.Info("getting component")
+
+	endpoint := c.RestURL().ResolveReference(&url.URL{
+		Path: path.Join(c.RestURL().Path, "components", keyOrID)}).String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get component request: %w", err)
+	}
+
+	resp, err := c.doRequestViaApiKey(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing get component request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, body)
+	}
+
+	var response GetComponentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("decoding get component response: %w", err)
+	}
+
+	return &response, nil
 }
 
 // SearchRegistryComponents Search for components in the global registry with natural language
