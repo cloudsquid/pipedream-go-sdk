@@ -14,27 +14,23 @@ func (l *StdLogger) Warn(msg string, keyvals ...any)  { log.Println("[WARN]", ms
 func (l *StdLogger) Error(msg string, keyvals ...any) { log.Println("[ERROR]", msg, keyvals) }
 
 func main() {
-
 	sdk := pipedream.NewPipedreamClient(
 		&StdLogger{},
 		"your-api-key",
 		"your-project-id",
-		"production",         // Environment: "production" or "development"
-		"your-client-id",     // OAuth Client ID
+		"development",        // Environment: "production" or "development"
+		"your-client-d",      // OAuth Client ID
 		"your-client-secret", // OAuth Client Secret
 		[]string{},           // Allowed Origins
 		"",                   // Connect API URL (optional, defaults to public)
-		"")                   // Rest API URL (optional, defaults to public)
+		"")
 
-	source, err := sdk.Rest().CreateSource(
-		context.Background(),
-		"sc_abc123",
-		"", "",
-		"example-source",
-	)
+	accounts, err := sdk.Connect().ListAccounts(context.Background(), "org_1234", "slack", "", false)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error listing accounts: %v", err)
 	}
 
-	log.Printf("Created source: %s", source.Data.ID)
+	for _, acc := range accounts.Data {
+		log.Printf("\nAccount: %s (%s)", acc.Name, acc.ID)
+	}
 }
