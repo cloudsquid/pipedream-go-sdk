@@ -93,8 +93,8 @@ func (suite *triggerTestSuite) TestDeployTrigger_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.DeployTrigger(
@@ -168,8 +168,8 @@ func (suite *triggerTestSuite) TestListDeployedTriggers_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListDeployedTriggers(
@@ -233,8 +233,8 @@ func (suite *triggerTestSuite) TestGetDeployedTrigger_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetDeployedTrigger(
@@ -274,8 +274,8 @@ func (suite *triggerTestSuite) TestDeleteDeployedTrigger_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteDeployedTrigger(
@@ -337,8 +337,8 @@ func (suite *triggerTestSuite) TestRetrieveTriggerEvents_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.RetrieveTriggerEvents(
@@ -387,8 +387,8 @@ func (suite *triggerTestSuite) TestListTriggerWebhooks_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListTriggerWebhooks(
@@ -447,8 +447,8 @@ func (suite *triggerTestSuite) TestUpdateTriggerWebhooks_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateTriggerWebhooks(
@@ -496,8 +496,8 @@ func (suite *triggerTestSuite) TestRetrieveTriggerWorkflows_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.RetrieveTriggerWorkflows(
@@ -556,8 +556,8 @@ func (suite *triggerTestSuite) TestUpdateTriggerWorkflows_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.UpdateTriggerWorkflows(

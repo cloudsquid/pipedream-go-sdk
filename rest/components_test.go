@@ -60,7 +60,7 @@ func (suite *componentTestSuite) TestCreateComponent_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -109,7 +109,7 @@ func (suite *componentTestSuite) TestGetComponents_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -156,7 +156,7 @@ func (suite *componentTestSuite) TestGetRegistryComponents_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -190,7 +190,7 @@ func (suite *componentTestSuite) TestSearchRegistryComponents_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 

@@ -19,8 +19,6 @@ func (c *Client) SubscribeToEmitter(
 	listenerID,
 	eventName string, // optional
 ) error {
-	c.Logger.Debug("creating subscription to emitter request")
-
 	if emitterID == "" || listenerID == "" {
 		return fmt.Errorf("emitter_id and listener_id are required")
 	}
@@ -64,8 +62,6 @@ func (c *Client) AutoSubscribeToEvent(
 	eventName string,
 	listenerID string,
 ) error {
-	c.Logger.Debug("creating auto-subscription to event request")
-
 	if eventName == "" || listenerID == "" {
 		return fmt.Errorf("event_name and listener_id are required")
 	}
@@ -107,8 +103,6 @@ func (c *Client) DeleteSubscription(
 	listenerID,
 	eventName string,
 ) error {
-	c.Logger.Debug("creating delete subscription request")
-
 	if emitterID == "" || listenerID == "" {
 		return fmt.Errorf("emitter_id and listener_id are required")
 	}

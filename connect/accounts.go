@@ -61,8 +61,6 @@ func (c *Client) ListAccounts(
 	oauthAppId string,
 	includeCredentials bool,
 ) (*ListAccountsResponse, error) {
-	c.Logger.Info("Listing accounts")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts")})
 
@@ -107,8 +105,6 @@ func (c *Client) GetAccount(
 	includeCredentials bool,
 	accountId string,
 ) (*GetAccountResponse, error) {
-	c.Logger.Info("getting an account's details")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)})
 
@@ -155,8 +151,6 @@ func (c *Client) DeleteAccount(
 	ctx context.Context,
 	accountId string,
 ) error {
-	c.Logger.Info("deleting an account")
-
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)}).String()
 
@@ -183,8 +177,6 @@ func (c *Client) DeleteAccounts(
 	ctx context.Context,
 	appID string,
 ) error {
-	c.Logger.Info("deleting all accounts for an app")
-
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "apps", appID, "accounts")}).String()
 
@@ -210,8 +202,6 @@ func (c *Client) DeleteEndUser(
 	ctx context.Context,
 	externalUserID string,
 ) error {
-	c.Logger.Info("deleting end user")
-
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "users", externalUserID)}).String()
 

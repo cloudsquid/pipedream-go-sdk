@@ -12,7 +12,6 @@ type SDK struct {
 }
 
 func NewPipedreamClient(
-	logger client.Logger,
 	apiKey string,
 	projectID string,
 	environment string,
@@ -23,7 +22,7 @@ func NewPipedreamClient(
 	restURL string,
 ) *SDK {
 
-	pd := client.NewClient(logger, apiKey, projectID, environment, clientID, clientSecret, allowedOrigins, connectURL, restURL)
+	pd := client.NewClient(apiKey, projectID, environment, clientID, clientSecret, allowedOrigins, connectURL, restURL)
 
 	return &SDK{
 		connect: &connect.Client{Client: pd},

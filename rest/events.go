@@ -3,7 +3,6 @@ package rest
 import (
 	"context"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/connect"
 	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
@@ -12,9 +11,16 @@ import (
 	"strconv"
 )
 
+type PageInfo struct {
+	TotalCount  int    `json:"total_count,omitempty"`
+	Count       int    `json:"count,omitempty"`
+	StartCursor string `json:"start_cursor,omitempty"`
+	EndCursor   string `json:"end_cursor,omitempty"`
+}
+
 type GetSourceEventsResponse struct {
-	PageInfo connect.PageInfo `json:"page_info"`
-	Data     []SourceEvent    `json:"data"`
+	PageInfo PageInfo      `json:"page_info"`
+	Data     []SourceEvent `json:"data"`
 }
 
 type SourceEvent struct {
@@ -40,9 +46,7 @@ func (c *Client) GetSourceEvents(
 	limit int,
 	expand bool,
 ) (*GetSourceEventsResponse, error) {
-	c.Logger.Info("get source events", "sourceID", sourceID)
-
-	baseURL := c.RestURL().ResolveReference(&url.URL{
+	endpointURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "sources", sourceID, "event_summaries")})
 
 	queryParams := url.Values{}
@@ -55,9 +59,9 @@ func (c *Client) GetSourceEvents(
 		internal.AddQueryParams(queryParams, "expand", "event")
 	}
 
-	baseURL.RawQuery = queryParams.Encode()
+	endpointURL.RawQuery = queryParams.Encode()
 
-	endpoint := baseURL.String()
+	endpoint := endpointURL.String()
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -91,8 +95,6 @@ func (c *Client) DeleteSourceEvents(
 	startID,
 	endID string, // optional
 ) error {
-	c.Logger.Info("deleting source events")
-
 	if sourceID == "" || startID == "" {
 		return fmt.Errorf("both sourceID and startID are required")
 	}
@@ -104,9 +106,7 @@ func (c *Client) DeleteSourceEvents(
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "start_id", startID)
 
-	if endID != "" {
-		internal.AddQueryParams(queryParams, "end_id", endID)
-	}
+	internal.AddQueryParams(queryParams, "end_id", endID)
 
 	endpointURL.RawQuery = queryParams.Encode()
 

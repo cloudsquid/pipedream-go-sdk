@@ -47,8 +47,6 @@ type Org struct {
 func (c *Client) GetCurrentUser(
 	ctx context.Context,
 ) (*GetCurrentUserResponse, error) {
-	c.Logger.Debug("getting current user info")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "users", "me")})
 

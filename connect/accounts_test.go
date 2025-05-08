@@ -73,8 +73,8 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.ListAccounts(
@@ -132,8 +132,8 @@ func (suite *accountsTestSuite) TestGetAccount_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetAccount(
@@ -177,8 +177,8 @@ func (suite *accountsTestSuite) TestGetAccount_Failure() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.GetAccount(
@@ -215,8 +215,8 @@ func (suite *accountsTestSuite) TestDeleteAccount_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteAccount(
@@ -250,8 +250,8 @@ func (suite *accountsTestSuite) TestDeleteAccount_Failure() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteAccount(
@@ -284,8 +284,8 @@ func (suite *accountsTestSuite) TestDeleteAccounts_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteAccounts(
@@ -319,8 +319,8 @@ func (suite *accountsTestSuite) TestDeleteAccounts_Failure() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteAccounts(
@@ -353,8 +353,8 @@ func (suite *accountsTestSuite) TestEndUser_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteEndUser(
@@ -389,8 +389,8 @@ func (suite *accountsTestSuite) TestEndUser_Failure() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	err := suite.pipedreamClient.DeleteEndUser(

@@ -12,6 +12,7 @@ import (
 	"path"
 )
 
+// note: all component endpoints are currently available when using  apiKey
 type CreateComponentRequest struct {
 	ComponentCode string `json:"component_code,omitempty"`
 	ComponentURL  string `json:"component_url,omitempty"`
@@ -65,8 +66,6 @@ func (c *Client) CreateComponent(
 	componentCode string,
 	componentURL string,
 ) (*CreateComponentResponse, error) {
-	c.Logger.Info("Create component")
-
 	if componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("either componentCode or componentURL must be provided")
 	}
@@ -111,8 +110,6 @@ func (c *Client) GetRegistryComponents(
 	ctx context.Context,
 	componentKey string,
 ) (*CreateComponentResponse, error) {
-	c.Logger.Info("Getting component from registry")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "components", "registry", componentKey)}).String()
 
@@ -149,8 +146,6 @@ func (c *Client) GetComponent(
 	ctx context.Context,
 	keyOrID string,
 ) (*GetComponentResponse, error) {
-	c.Logger.Info("getting component")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "components", keyOrID)}).String()
 
@@ -186,8 +181,6 @@ func (c *Client) SearchRegistryComponents(
 	similarityThreshold int,
 	debug bool,
 ) (*ComponentSearchResponse, error) {
-	c.Logger.Info("searching registry component")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "components", "search")})
 

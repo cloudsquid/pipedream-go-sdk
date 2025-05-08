@@ -59,7 +59,7 @@ func (suite *sourcesTestSuite) TestCreateSource_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -113,7 +113,7 @@ func (suite *sourcesTestSuite) TestUpdateSource_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -144,7 +144,7 @@ func (suite *sourcesTestSuite) TestDeleteSource_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 

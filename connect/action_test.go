@@ -81,8 +81,8 @@ func (suite *actionTestSuite) TestInvokeAction_Success() {
 
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
-		"", nil, server.URL, "")
+	base := client.NewClient("", "project-abc", "development", "",
+		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
 	resp, err := suite.pipedreamClient.InvokeAction(

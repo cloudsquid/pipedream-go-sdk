@@ -146,8 +146,6 @@ func (c *Client) GetPropOptions(
 	externalUserID string,
 	configuredProps ConfiguredProps,
 ) (*PropOptions, error) {
-	c.Logger.Info("Getting options for the prop")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "components", "configure")})
 
@@ -212,10 +210,6 @@ func (c *Client) GetComponent(
 	componentKey string,
 	componentType ComponentType,
 ) (*GetComponentResponse, error) {
-	c.Logger.Info("Getting component details",
-		"component", componentKey,
-		"type", componentType)
-
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), componentKey)}).String()
 
@@ -249,11 +243,6 @@ func (c *Client) ListComponents(
 	appName string,
 	searchTerm string,
 ) (*ListComponentResponse, error) {
-	c.Logger.Info("Listing components",
-		"componentType", componentType,
-		"appName", appName,
-	)
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType))})
 

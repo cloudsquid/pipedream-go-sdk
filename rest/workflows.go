@@ -179,8 +179,6 @@ func (c *Client) CreateWorkflow(
 	triggers []WorkflowTrigger,
 	settings *WorkflowSettings,
 ) (*CreateWorkflowResponse, error) {
-	c.Logger.Debug("creating workflow")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "workflows"),
 	}).String()
@@ -231,8 +229,6 @@ func (c *Client) UpdateWorkflow(
 	orgID string,
 	active bool,
 ) (*map[string]any, error) {
-	c.Logger.Debug("update workflow")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "workflows", id),
 	}).String()
@@ -277,8 +273,6 @@ func (c *Client) GetWorkflowDetails(
 	id,
 	orgID string,
 ) (*GetWorkflowDetailsResponse, error) {
-	c.Logger.Debug("get workflow details")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
@@ -324,8 +318,6 @@ func (c *Client) GetWorkflowEmits(
 	expandEvent bool,
 	limit int, // if 0 no limit is applied
 ) (*GetWorkflowEmitsResponse, error) {
-	c.Logger.Debug("get workflow emits")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
@@ -379,8 +371,6 @@ func (c *Client) GetWorkflowErrors(
 	expandEvent bool,
 	limit int,
 ) (*GetWorkflowErrorsResponse, error) {
-	c.Logger.Debug("getting workflow errors")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "workflows", id, "$errors", "event_summaries"),
 	})

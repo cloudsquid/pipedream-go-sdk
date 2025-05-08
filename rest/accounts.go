@@ -56,8 +56,6 @@ func (c *Client) ListAccounts(
 	oauthAppID string, // optional
 	includeCredentials bool,
 ) (*ListAccountsResponse, error) {
-	c.Logger.Info("listing accounts")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "accounts"),
 	})
@@ -105,8 +103,6 @@ func (c *Client) GetAccount(
 	accountID string,
 	includeCredentials bool,
 ) (*GetAccountResponse, error) {
-	c.Logger.Info("get account")
-
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "accounts", accountID),
 	})

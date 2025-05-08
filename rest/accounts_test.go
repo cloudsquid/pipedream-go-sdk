@@ -61,7 +61,7 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+	base := client.NewClient("", "project-abc", "development", "",
 		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -116,7 +116,7 @@ func (suite *accountsTestSuite) TestGetAccount_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "", "project-abc", "development", "",
+	base := client.NewClient("", "project-abc", "development", "",
 		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 

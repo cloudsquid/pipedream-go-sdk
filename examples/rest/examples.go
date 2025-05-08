@@ -6,16 +6,8 @@ import (
 	"log"
 )
 
-type StdLogger struct{}
-
-func (l *StdLogger) Debug(msg string, keyvals ...any) { log.Println("[DEBUG]", msg, keyvals) }
-func (l *StdLogger) Info(msg string, keyvals ...any)  { log.Println("[INFO]", msg, keyvals) }
-func (l *StdLogger) Warn(msg string, keyvals ...any)  { log.Println("[WARN]", msg, keyvals) }
-func (l *StdLogger) Error(msg string, keyvals ...any) { log.Println("[ERROR]", msg, keyvals) }
-
 func main() {
 	sdk := pipedream.NewPipedreamClient(
-		&StdLogger{},
 		"your-api-key",
 		"your-project-id",
 		"development",        // Environment: "production" or "development"

@@ -21,12 +21,6 @@ func (c *Client) doRequestViaOauth(
 	req.Header.Set("X-PD-Environment", c.Environment())
 	req.Header.Set("Content-Type", "application/json")
 
-	c.Logger.Info("Executing request",
-		"url", req.URL.String(),
-		"request", req.Header,
-		"environment", c.Environment(),
-	)
-
 	response, err := c.HTTPClient().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request to pipedream api in environment %s failed: %w",

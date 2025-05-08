@@ -26,8 +26,6 @@ func (c *Client) InvokeAction(
 	externalUserID string,
 	props ConfiguredProps,
 ) (map[string]any, error) {
-	c.Logger.Info("Invoking action")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "actions", "run")})
 

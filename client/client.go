@@ -1,20 +1,13 @@
 package client
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
 )
 
-type Logger interface {
-	Debug(msg string, keyvals ...any)
-	Info(msg string, keyvals ...any)
-	Warn(msg string, keyvals ...any)
-	Error(msg string, keyvals ...any)
-}
-
 type Client struct {
-	Logger         Logger
 	apiKey         string
 	httpClient     *http.Client
 	environment    string
@@ -35,7 +28,6 @@ var (
 )
 
 func NewClient(
-	logger Logger,
 	apiKey string,
 	projectID string,
 	environment string,
@@ -53,16 +45,15 @@ func NewClient(
 	}
 	connectParsed, err := url.Parse(connectURL)
 	if err != nil {
-		logger.Error("parsing pipedream connect api url: %w", err)
+		log.Fatal("parsing pipedream connect api url: %w", err)
 	}
 
 	restParsed, err := url.Parse(restURL)
 	if err != nil {
-		logger.Error("parsing pipedream base api url: %w", err)
+		log.Fatal("parsing pipedream connect api url: %w", err)
 	}
 
 	return &Client{
-		Logger:         logger,
 		apiKey:         apiKey,
 		projectID:      projectID,
 		httpClient:     &http.Client{},

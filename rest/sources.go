@@ -62,8 +62,6 @@ func (c *Client) CreateSource(
 	componentURL,
 	name string,
 ) (*CreateSourceResponse, error) {
-	c.Logger.Info("creating source")
-
 	if componentID == "" && componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
 	}
@@ -113,8 +111,6 @@ func (c *Client) UpdateSource(
 	name string,
 	active bool,
 ) (*CreateSourceResponse, error) {
-	c.Logger.Info("updating source")
-
 	if componentID == "" && componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
 	}
@@ -160,8 +156,6 @@ func (c *Client) DeleteSource(
 	ctx context.Context,
 	sourceID string,
 ) error {
-	c.Logger.Info("deleting source")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "sources", sourceID)})
 	endpoint := baseURL.String()

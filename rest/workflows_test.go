@@ -121,7 +121,7 @@ func (suite *workflowsTestSuite) TestCreateWorkflow_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -207,7 +207,7 @@ func (suite *workflowsTestSuite) TestUpdateWorkflow_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -269,7 +269,7 @@ func (suite *workflowsTestSuite) TestGetWorkflowDetails_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -325,7 +325,7 @@ func (suite *workflowsTestSuite) TestGetWorkflowEmits_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
@@ -390,7 +390,7 @@ func (suite *workflowsTestSuite) TestGetWorkflowErrors_Success() {
 	}))
 	defer server.Close()
 
-	base := client.NewClient(&mockLogger{}, "dummy-key", "project-abc", "development", "",
+	base := client.NewClient("dummy-key", "project-abc", "development", "",
 		"", nil, "", server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 

@@ -97,8 +97,6 @@ func (c *Client) DeployTrigger(
 	dynamicPropsID string, // OPTIONAL
 	workflowID string, // OPTIONAL
 ) (map[string]any, error) {
-	c.Logger.Info("Deploying trigger")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "triggers", "deploy")})
 
@@ -141,8 +139,6 @@ func (c *Client) ListDeployedTriggers(
 	ctx context.Context,
 	externalUserID string,
 ) (*TriggerList, error) {
-	c.Logger.Info("List Deployed triggers")
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers")})
 
@@ -173,8 +169,6 @@ func (c *Client) GetDeployedTrigger(
 	deployedComponentID string,
 	externalUserId string,
 ) (*Trigger, error) {
-	c.Logger.Info("Retrieving deployed trigger", "trigger", deployedComponentID)
-
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID)})
 

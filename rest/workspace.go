@@ -72,13 +72,11 @@ type Data struct {
 	NameSlug        string                  `json:"name_slug"`
 }
 
-// GetWorkspace views your workspace’s current credit usage for the billing period in real time
+// GetWorkspace views your workspaces current credit usage for the billing period in real time
 func (c *Client) GetWorkspace(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceResponse, error) {
-	c.Logger.Debug("get workspace")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
@@ -119,8 +117,6 @@ func (c *Client) GetWorkspaceConnectedAccounts(
 	orgID string,
 	query string, // optional
 ) (*GetWorkspaceConnectedAccountsResponse, error) {
-	c.Logger.Debug("get workspace connected accounts")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
@@ -166,8 +162,6 @@ func (c *Client) GetWorkspaceSubscriptions(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceSubscriptionsResponse, error) {
-	c.Logger.Debug("get workspace subscriptions")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}
@@ -207,8 +201,6 @@ func (c *Client) GetWorkspaceSources(
 	ctx context.Context,
 	orgID string,
 ) (*GetWorkspaceSourcesResponse, error) {
-	c.Logger.Debug("get workspace sources")
-
 	if orgID == "" {
 		return nil, fmt.Errorf("orgID is required")
 	}

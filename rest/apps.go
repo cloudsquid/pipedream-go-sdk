@@ -23,8 +23,6 @@ type GetAppResponse struct {
 
 // Retrieve a list of all apps available on Pipedream
 func (c *Client) ListApps(ctx context.Context, q string, hasComponents, hasActions, hasTriggers bool) (*ListAppsResponse, error) {
-	c.Logger.Info("Listing apps")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "apps")})
 
@@ -55,8 +53,6 @@ func (c *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 	}
 	defer response.Body.Close()
 
-	c.Logger.Info("Response status code", "code", response.StatusCode)
-
 	var appList ListAppsResponse
 	err = json.NewDecoder(response.Body).Decode(&appList)
 	if err != nil {
@@ -68,8 +64,6 @@ func (c *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 
 // GetApp Retrieve metadata for a specific app
 func (c *Client) GetApp(ctx context.Context, appID string) (*GetAppResponse, error) {
-	c.Logger.Info("get an app")
-
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "apps", appID)})
 
