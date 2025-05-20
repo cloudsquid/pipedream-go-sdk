@@ -1,66 +1,25 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+#
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# dependencies
-.pnp
-.pnp.js
+# Test binary, built with `go test -c`
+*.test
 
-# testing
-coverage
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
 
-# next.js
-.next/
-frontend/out/
+# Dependency directories (remove the comment below to include it)
+# vendor/
 
-# production
-frontend/build
+# Go workspace file
+go.work
+go.work.sum
 
-# misc
-.DS_Store
-*.pem
-
-
-/dumps
-# local env files
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-
-
-# Logs
-logs
-*.log
-firebase-debug.log*
-firebase-debug.*.log*
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-.firebase/
-.openapi-generator
-.openapi-generator-ignore
-
-
-.idea
-
-bin
-agentic-poc.ipynb
-experiment-book.ipynb
-
-sdls/
-
-*.csv
-cmd/test*
-
-myenv/
-.ipynb_checkpoints/
-
-*.env
-cmd/migration/migration
-
-vendor/
+# env file
+.env
