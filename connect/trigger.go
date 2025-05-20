@@ -29,6 +29,10 @@ type GetTriggerResponse struct {
 	Data Trigger `json:"data"`
 }
 
+type DeployTriggerResponse struct {
+	Data Trigger `json:"data"`
+}
+
 type PageInfo struct {
 	TotalCount  int    `json:"total_count,omitempty"`
 	Count       int    `json:"count,omitempty"`
@@ -101,7 +105,7 @@ func (c *Client) DeployTrigger(
 	webhookURL string,
 	dynamicPropsID string, // OPTIONAL
 	workflowID string, // OPTIONAL
-) (map[string]any, error) {
+) (*Trigger, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "triggers", "deploy"),
 	})
@@ -133,12 +137,12 @@ func (c *Client) DeployTrigger(
 		return nil, fmt.Errorf("executing deploy trigger request: %w", err)
 	}
 
-	var response map[string]any
+	var response DeployTriggerResponse
 	if err := internal.UnmarshalResponse(resp, &response); err != nil {
 		return nil, fmt.Errorf("unmarhalling response for trigger response: %w", err)
 	}
 
-	return response, nil
+	return &response.Data, nil
 }
 
 func (c *Client) ListDeployedTriggers(
