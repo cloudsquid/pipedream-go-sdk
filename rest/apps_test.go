@@ -16,13 +16,6 @@ type appsTestSuite struct {
 	pipedreamClient *Client
 }
 
-type mockLogger struct{}
-
-func (l *mockLogger) Debug(msg string, keyvals ...any) {}
-func (l *mockLogger) Info(msg string, keyvals ...any)  {}
-func (l *mockLogger) Warn(msg string, keyvals ...any)  {}
-func (l *mockLogger) Error(msg string, keyvals ...any) {}
-
 func (suite *appsTestSuite) SetupTest() {
 	suite.ctx = context.Background()
 }

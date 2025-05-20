@@ -18,20 +18,6 @@ type Token struct {
 	ExpiresAt   time.Time
 }
 
-type UserTokenRequest struct {
-	ExternalUserID     string   `json:"external_user_id"`
-	AllowedOrigins     []string `json:"allowed_origins"`
-	SuccessRedirectURI string   `json:"success_redirect_uri,omitempty"`
-	ErrorRedirectURI   string   `json:"error_redirect_uri,omitempty"`
-	WebhookURI         string   `json:"webhook_uri,omitempty"`
-}
-
-type UserTokenResponse struct {
-	ConnectLinkURL string    `json:"connect_link_url,omitempty"`
-	ExpiresAt      time.Time `json:"expires_at,omitzero"`
-	Token          string    `json:"token,omitempty"`
-}
-
 func (c *Client) AcquireAccessToken() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
