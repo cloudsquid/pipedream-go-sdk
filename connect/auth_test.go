@@ -1,15 +1,16 @@
-package rest
+package connect
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/client"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/cloudsquid/pipedream-go-sdk/client"
+	"github.com/stretchr/testify/suite"
 )
 
 type authTestSuite struct {

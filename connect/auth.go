@@ -1,15 +1,16 @@
-package rest
+package connect
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type UserTokenRequest struct {
@@ -33,7 +34,8 @@ func (c *Client) AcquireUserToken(
 	webhookURI string, // optional, left empty won't be configured
 ) (*UserTokenResponse, error) {
 	baseURL := c.RestURL().ResolveReference(&url.URL{
-		Path: path.Join(c.RestURL().Path, c.ProjectID(), "tokens")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "tokens"),
+	})
 
 	endpoint := baseURL.String()
 
