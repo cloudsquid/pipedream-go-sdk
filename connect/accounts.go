@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 	"time"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type Account struct {
@@ -35,6 +36,7 @@ type App struct {
 	NameSlug    string `json:"name_slug,omitempty"`
 	AuthType    string `json:"auth_type,omitempty"`
 	Description string `json:"description,omitempty"`
+	ImgSrc      string `json:"img_src,omitempty"`
 }
 
 type Credentials struct {
@@ -62,7 +64,8 @@ func (c *Client) ListAccounts(
 	includeCredentials bool,
 ) (*ListAccountsResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts"),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -106,7 +109,8 @@ func (c *Client) GetAccount(
 	accountId string,
 ) (*GetAccountResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -152,7 +156,8 @@ func (c *Client) DeleteAccount(
 	accountId string,
 ) error {
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId)}).String()
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId),
+	}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
@@ -178,7 +183,8 @@ func (c *Client) DeleteAccounts(
 	appID string,
 ) error {
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "apps", appID, "accounts")}).String()
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "apps", appID, "accounts"),
+	}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
@@ -203,7 +209,8 @@ func (c *Client) DeleteEndUser(
 	externalUserID string,
 ) error {
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "users", externalUserID)}).String()
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "users", externalUserID),
+	}).String()
 
 	req, err := http.NewRequest(http.MethodDelete, endpoint, nil)
 	if err != nil {
