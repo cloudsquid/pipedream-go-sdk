@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/client"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/cloudsquid/pipedream-go-sdk/client"
+	"github.com/stretchr/testify/suite"
 )
 
 type triggerTestSuite struct {
@@ -191,27 +192,29 @@ func (suite *triggerTestSuite) TestGetDeployedTrigger_Success() {
 	expectedPath := "/project-abc/deployed-triggers/component_id"
 
 	expectedResponse := `{
-	  "id": "dc_gzumK2e",
-	  "owner_id": "exu_2LniLm",
-	  "component_id": "sc_r1ixBpL",
-	  "configurable_props": [
-		{
-		  "name": "googleDrive",
-		  "type": "app",
-		  "app": "google_drive"
-		}
-	  ],
-	  "configured_props": {
-		"googleDrive": {
-		  "authProvisionId": "apn_V1hMeLM"
-		}
-	  },
-	  "active": true,
-	  "created_at": 1733512889,
-	  "updated_at": 1733512889,
-	  "name": "Danny Connect - exu_2LniLm",
-	  "name_slug": "danny-connect---exu-2-lni-lm-3"
-	}`
+	"data": {
+		"id": "dc_gzumK2e",
+		"owner_id": "exu_2LniLm",
+		"component_id": "sc_r1ixBpL",
+		"configurable_props": [
+			{
+			"name": "googleDrive",
+			"type": "app",
+			"app": "google_drive"
+			}
+		],
+		"configured_props": {
+			"googleDrive": {
+			"authProvisionId": "apn_V1hMeLM"
+			}
+		},
+		"active": true,
+		"created_at": 1733512889,
+		"updated_at": 1733512889,
+		"name": "Danny Connect - exu_2LniLm",
+		"name_slug": "danny-connect---exu-2-lni-lm-3"
+	}
+}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {

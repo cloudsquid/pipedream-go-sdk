@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/cloudsquid/pipedream-go-sdk"
 	"log"
+
+	"github.com/cloudsquid/pipedream-go-sdk"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("recieved global registry components: %s", components.Data)
+	log.Printf("recieved global registry components: %v", components.Data)
 
 	events, err := sdk.Rest().GetSourceEvents(
 		context.Background(),
@@ -36,5 +37,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("recieved source events: %s", events.Data)
+	log.Printf("recieved source events: %v", events.Data)
 }
