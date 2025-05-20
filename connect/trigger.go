@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type Trigger struct {
@@ -22,6 +23,10 @@ type Trigger struct {
 	UpdatedAt         int                `json:"updated_at"`
 	Name              string             `json:"name"`
 	NameSlug          string             `json:"name_slug"`
+}
+
+type GetTriggerResponse struct {
+	Data Trigger `json:"data"`
 }
 
 type PageInfo struct {
@@ -98,7 +103,8 @@ func (c *Client) DeployTrigger(
 	workflowID string, // OPTIONAL
 ) (map[string]any, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "triggers", "deploy")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "triggers", "deploy"),
+	})
 
 	trigger := DeployTriggerRequest{
 		ComponentKey:    componentKey,
@@ -140,7 +146,8 @@ func (c *Client) ListDeployedTriggers(
 	externalUserID string,
 ) (*TriggerList, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers"),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -170,7 +177,8 @@ func (c *Client) GetDeployedTrigger(
 	externalUserId string,
 ) (*Trigger, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID)})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserId)
@@ -186,12 +194,12 @@ func (c *Client) GetDeployedTrigger(
 		return nil, fmt.Errorf("executing request to retrieve trigger: %w", err)
 	}
 
-	var trigger Trigger
+	var trigger GetTriggerResponse
 	if err := internal.UnmarshalResponse(response, &trigger); err != nil {
 		return nil, fmt.Errorf("unmarshalling response to retrieve trigger: %w", err)
 	}
 
-	return &trigger, nil
+	return &trigger.Data, nil
 }
 
 func (c *Client) DeleteDeployedTrigger(
@@ -200,7 +208,8 @@ func (c *Client) DeleteDeployedTrigger(
 	externalUserID string,
 ) error {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedTriggerID)})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedTriggerID),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -231,7 +240,8 @@ func (c *Client) RetrieveTriggerEvents(
 	numberOfEvents int,
 ) (*TriggerEventList, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "events")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "events"),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -262,7 +272,8 @@ func (c *Client) ListTriggerWebhooks(
 	externalUserID string,
 ) (*TriggerWebhookURLs, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks"),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -294,7 +305,8 @@ func (c *Client) UpdateTriggerWebhooks(
 	webhookURLs []string,
 ) (*TriggerWebhookURLs, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "webhooks"),
+	})
 
 	body := UpdateTriggerWebhooksRequest{
 		ExternalUserID: externalUserID,
@@ -331,7 +343,8 @@ func (c *Client) RetrieveTriggerWorkflows(
 	externalUserID string,
 ) (*TriggerWorkflowIDs, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows"),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
@@ -363,7 +376,8 @@ func (c *Client) UpdateTriggerWorkflows(
 	workflowIDs []string,
 ) (*TriggerWorkflowIDs, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "deployed-triggers", deployedComponentID, "workflows"),
+	})
 
 	body := UpdateTriggerWorkflowsRequest{
 		ExternalUserID: externalUserID,
