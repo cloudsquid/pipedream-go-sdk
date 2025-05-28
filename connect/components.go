@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -242,6 +243,7 @@ func (c *Client) ListComponents(
 	componentType ComponentType,
 	appName string,
 	searchTerm string,
+	limit int,
 ) (*ListComponentResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType))})
@@ -249,6 +251,10 @@ func (c *Client) ListComponents(
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "app", appName)
 	internal.AddQueryParams(queryParams, "q", searchTerm)
+
+	if limit > 0 {
+		internal.AddQueryParams(queryParams, "limit", strconv.Itoa(limit))
+	}
 
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()

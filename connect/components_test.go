@@ -170,8 +170,9 @@ func (suite *componentTestSuite) TestListComponents_Success() {
 
 	expectedPath := "/project-abc/components"
 	expectedQuery := url.Values{
-		"app": []string{"gitlab"},
-		"q":   []string{"issue"},
+		"app":   []string{"gitlab"},
+		"q":     []string{"issue"},
+		"limit": []string{"5"},
 	}
 
 	expectedResponse := `{
@@ -204,6 +205,7 @@ func (suite *componentTestSuite) TestListComponents_Success() {
 			require.Equal(expectedPath, r.URL.Path)
 			require.Equal(expectedQuery.Get("app"), r.URL.Query().Get("app"))
 			require.Equal(expectedQuery.Get("q"), r.URL.Query().Get("q"))
+			require.Equal(expectedQuery.Get("limit"), r.URL.Query().Get("limit"))
 
 			w.WriteHeader(http.StatusOK)
 			_, _ = fmt.Fprint(w, expectedResponse)
@@ -220,6 +222,7 @@ func (suite *componentTestSuite) TestListComponents_Success() {
 		componentType,
 		appType,
 		searchTerm,
+		5,
 	)
 
 	require.NoError(err)
