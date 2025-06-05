@@ -23,6 +23,7 @@ type Trigger struct {
 	UpdatedAt         int                `json:"updated_at"`
 	Name              string             `json:"name"`
 	NameSlug          string             `json:"name_slug"`
+	EmailAddress      string             `json:"email_address,omitempty"`
 }
 
 type GetTriggerResponse struct {
