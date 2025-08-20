@@ -230,11 +230,17 @@ func (c *Client) DeleteDeployedTrigger(
 		return fmt.Errorf("executing delete trigger request: %w", err)
 	}
 
-	if response.StatusCode == http.StatusNoContent {
+	switch response.StatusCode {
+	case http.StatusNoContent:
 		return nil
-	} else {
+	case http.StatusNotFound:
+		return fmt.Errorf("deleting deployed trigger %s: %w",
+			deployedTriggerID,
+			NotFoundErr)
+	default:
 		return fmt.Errorf("expected status %d, got %d",
-			http.StatusNoContent, response.StatusCode)
+			http.StatusNoContent,
+			response.StatusCode)
 	}
 }
 
