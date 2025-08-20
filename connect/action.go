@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type InvokeActionRequest struct {
