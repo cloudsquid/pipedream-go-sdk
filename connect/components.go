@@ -91,7 +91,6 @@ type PropOptions struct {
 	Context       any      `json:"context,omitempty"` // TODO
 	Options       []Value  `json:"options,omitempty"`
 	Errors        []string `json:"errors,omitempty"`
-	Timings       any      `json:"timings,omitempty"`
 	StringOptions any      `json:"string_options,omitempty"`
 }
 
