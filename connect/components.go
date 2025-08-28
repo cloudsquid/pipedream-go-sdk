@@ -86,12 +86,11 @@ func (c ComponentDetails) String() string {
 }
 
 type PropOptions struct {
-	Observations  []any            `json:"observations,omitempty"`
-	Context       any              `json:"context,omitempty"` // TODO
-	Options       []Value          `json:"options,omitempty"`
-	Errors        []string         `json:"errors,omitempty"`
-	Timings       []map[string]any `json:"timings,omitempty"`
-	StringOptions any              `json:"string_options,omitempty"`
+	Observations  []any    `json:"observations,omitempty"`
+	Context       any      `json:"context,omitempty"` // TODO
+	Options       []Value  `json:"options,omitempty"`
+	Errors        []string `json:"errors,omitempty"`
+	StringOptions any      `json:"string_options,omitempty"`
 }
 
 type DynamicProps struct {
