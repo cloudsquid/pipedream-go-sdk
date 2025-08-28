@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -138,9 +140,16 @@ func (c *Client) DeployTrigger(
 		return nil, fmt.Errorf("executing deploy trigger request: %w", err)
 	}
 
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading body for deploying trigger: %w", err)
+	}
+
 	var response DeployTriggerResponse
-	if err := internal.UnmarshalResponse(resp, &response); err != nil {
-		return nil, fmt.Errorf("unmarhalling response for trigger response: %w", err)
+	if err := json.Unmarshal(bodyBytes, &response); err != nil {
+		return nil, fmt.Errorf("unmarhalling response for trigger response: %w: %w",
+			errors.New(string(bodyBytes)),
+			err)
 	}
 
 	return &response.Data, nil

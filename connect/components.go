@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type ComponentType string
@@ -86,12 +87,12 @@ func (c ComponentDetails) String() string {
 }
 
 type PropOptions struct {
-	Observations  []any            `json:"observations,omitempty"`
-	Context       any              `json:"context,omitempty"` // TODO
-	Options       []Value          `json:"options,omitempty"`
-	Errors        []string         `json:"errors,omitempty"`
-	Timings       []map[string]any `json:"timings,omitempty"`
-	StringOptions any              `json:"string_options,omitempty"`
+	Observations  []any    `json:"observations,omitempty"`
+	Context       any      `json:"context,omitempty"` // TODO
+	Options       []Value  `json:"options,omitempty"`
+	Errors        []string `json:"errors,omitempty"`
+	Timings       any      `json:"timings,omitempty"`
+	StringOptions any      `json:"string_options,omitempty"`
 }
 
 type DynamicProps struct {
@@ -192,19 +193,15 @@ func (c *Client) GetPropOptions(
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		bodyBytes, err := io.ReadAll(response.Body)
-		if err != nil {
-			return nil, fmt.Errorf("reading response body: %w", err)
-		}
-
-		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 
 	var propOptions PropOptions
-	if err := internal.UnmarshalResponse(response, &propOptions); err != nil {
-		return nil, fmt.Errorf("unmarshalling prop options for component %s: %w",
-			componentKey, err)
+	if err := json.Unmarshal(bodyBytes, &propOptions); err != nil {
+		return nil, fmt.Errorf("unmarshalling body into propOptions: %w: %w",
+			errors.New(string(bodyBytes)), err)
 	}
 
 	if propOptions.Errors != nil || len(propOptions.Errors) > 0 {
