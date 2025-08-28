@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloudsquid/pipedream-go-sdk/internal"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -191,6 +192,15 @@ func (c *Client) GetPropOptions(
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading response body: %w", err)
+		}
+
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
+
 	var propOptions PropOptions
 	if err := internal.UnmarshalResponse(response, &propOptions); err != nil {
 		return nil, fmt.Errorf("unmarshalling prop options for component %s: %w",
@@ -225,6 +235,15 @@ func (c *Client) GetComponent(
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading response body: %w", err)
+		}
+
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
 
 	var component GetComponentResponse
 	if err := internal.UnmarshalResponse(response, &component); err != nil {
