@@ -3,13 +3,15 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/connect"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type ListAppsResponse struct {
@@ -53,10 +55,15 @@ func (c *Client) ListApps(ctx context.Context, q string, hasComponents, hasActio
 	}
 	defer response.Body.Close()
 
-	var appList ListAppsResponse
-	err = json.NewDecoder(response.Body).Decode(&appList)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("decoding response: %w", err)
+		return nil, fmt.Errorf("failed to read body: %w", err)
+	}
+
+	var appList ListAppsResponse
+	err = json.Unmarshal(bodyBytes, &appList)
+	if err != nil {
+		return nil, errors.New(string(bodyBytes))
 	}
 
 	return &appList, nil
