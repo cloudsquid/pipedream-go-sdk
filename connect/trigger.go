@@ -127,6 +127,8 @@ func (c *Client) DeployTrigger(
 		return nil, fmt.Errorf("marshalling deploy trigger request: %w", err)
 	}
 
+	fmt.Printf("Deploying trigger: %s\n", string(jsonBytes))
+
 	req, err := http.NewRequest(
 		http.MethodPost,
 		baseURL.String(),
@@ -143,6 +145,10 @@ func (c *Client) DeployTrigger(
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading body for deploying trigger: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusInternalServerError {
+		return nil, fmt.Errorf("failed to deploy trigger to: %s", trigger.WebhookURL)
 	}
 
 	var response DeployTriggerResponse
