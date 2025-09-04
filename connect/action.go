@@ -26,6 +26,7 @@ func (c *Client) InvokeAction(
 	componentKey string,
 	externalUserID string,
 	props ConfiguredProps,
+	dynamicPropsId string,
 ) (map[string]any, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "actions", "run")})
@@ -34,6 +35,10 @@ func (c *Client) InvokeAction(
 		ID:              componentKey,
 		ConfiguredProps: props,
 		ExternalUserID:  externalUserID,
+	}
+
+	if dynamicPropsId != "" {
+		invokeActionReq.DynamicPropsID = dynamicPropsId
 	}
 
 	jsonBytes, err := json.MarshalIndent(invokeActionReq, "", "  ")
