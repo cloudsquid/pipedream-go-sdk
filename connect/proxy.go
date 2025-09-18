@@ -3,12 +3,13 @@ package connect
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"path"
+	"strings"
 )
 
 type ProxyRequest struct {
@@ -27,30 +28,60 @@ type ProxyResponse struct {
 }
 
 // Proxy posts to: POST /v1/connect/{project_id}/proxy
+// https://pipedream.com/docs/connect/api-proxy
 func (c *Client) Proxy(
 	ctx context.Context,
 	pr ProxyRequest,
 ) (*ProxyResponse, error) {
-	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "proxy"),
-	})
+	if pr.ExternalUserID == "" || pr.AccountID == "" ||
+		pr.Method == "" ||
+		pr.URL == "" {
+		return nil, fmt.Errorf("proxy: missing required fields")
+	}
 
-	payload, err := json.Marshal(pr)
-	if err != nil {
-		return nil, fmt.Errorf("marshal proxy request: %w", err)
+	// URL-safe base64 encode the target URL or relative path
+	encoded := base64.RawURLEncoding.EncodeToString([]byte(pr.URL))
+
+	// Build full endpoint: /v1/connect/{project}/proxy/{encoded}?external_user_id=…&account_id=…
+	u := *c.ConnectURL()
+	u.Path = path.Join(
+		c.ConnectURL().Path,
+		c.ProjectID(),
+		"proxy",
+		encoded,
+	)
+	q := u.Query()
+	q.Set("external_user_id", pr.ExternalUserID)
+	q.Set("account_id", pr.AccountID)
+	u.RawQuery = q.Encode()
+
+	var body io.Reader
+	if pr.Body != nil && len(pr.Body) > 0 {
+		body = bytes.NewReader(pr.Body)
 	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
-		http.MethodPost,
-		baseURL.String(),
-		bytes.NewReader(payload),
+		pr.Method,
+		u.String(),
+		body,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create proxy request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+
 	req.Header.Set("x-pd-environment", c.Environment())
+	if body != nil && req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	for k, v := range pr.Headers {
+		if strings.EqualFold(k, "authorization") ||
+			strings.EqualFold(k, "host") ||
+			strings.EqualFold(k, "content-length") {
+			continue
+		}
+		req.Header.Set(k, v)
+	}
 
 	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
@@ -58,14 +89,14 @@ func (c *Client) Proxy(
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read proxy response: %w", err)
 	}
 
 	return &ProxyResponse{
 		Status: resp.StatusCode,
-		Body:   body,
+		Body:   b,
 		Header: resp.Header.Clone(),
 	}, nil
 }
