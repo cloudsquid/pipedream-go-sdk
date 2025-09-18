@@ -39,10 +39,8 @@ func (c *Client) Proxy(
 		return nil, fmt.Errorf("proxy: missing required fields")
 	}
 
-	// URL-safe base64 encode the target URL or relative path
 	encoded := base64.RawURLEncoding.EncodeToString([]byte(pr.URL))
 
-	// Build full endpoint: /v1/connect/{project}/proxy/{encoded}?external_user_id=…&account_id=…
 	u := *c.ConnectURL()
 	u.Path = path.Join(
 		c.ConnectURL().Path,
