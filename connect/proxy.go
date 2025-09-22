@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
+	"strings"
 )
 
 type ProxyRequest struct {
@@ -21,9 +23,10 @@ type ProxyRequest struct {
 }
 
 type ProxyResponse struct {
-	Status int
-	Body   []byte
-	Header http.Header
+	Status     int         `json:"status"`
+	Body       []byte      `json:"body"`
+	Header     http.Header `json:"header"`
+	StatusText string      `json:"status_text"`
 }
 
 // Proxy posts to: POST /v1/connect/{project_id}/proxy
@@ -32,30 +35,32 @@ func (c *Client) Proxy(
 	ctx context.Context,
 	pr ProxyRequest,
 ) (*ProxyResponse, error) {
-	if pr.ExternalUserID == "" || pr.AccountID == "" ||
-		pr.URL == "" {
-		return nil, fmt.Errorf("proxy: missing required fields")
+	if err := pr.Validate(); err != nil {
+		return nil, fmt.Errorf("proxy validation: %w", err)
 	}
 	encoded := base64.RawURLEncoding.EncodeToString([]byte(pr.URL))
-
-	base := c.ConnectURL()
-	u := *base
-	u.Path = path.Join(base.Path, c.ProjectID(), "proxy", encoded)
-
-	q := u.Query()
+	proxyURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(
+			c.ConnectURL().Path,
+			c.ProjectID(),
+			"proxy",
+			encoded,
+		),
+	})
+	q := proxyURL.Query()
 	q.Set("external_user_id", pr.ExternalUserID)
 	q.Set("account_id", pr.AccountID)
-	u.RawQuery = q.Encode()
+	proxyURL.RawQuery = q.Encode()
 
-	var body io.Reader
-	if len(pr.Body) > 0 {
-		body = bytes.NewReader(pr.Body)
+	body, err := c.prepareRequestBody(pr.Body)
+	if err != nil {
+		return nil, fmt.Errorf("prepare request body: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		pr.Method,
-		u.String(),
+		proxyURL.String(),
 		body,
 	)
 	if err != nil {
@@ -76,8 +81,53 @@ func (c *Client) Proxy(
 	}
 
 	return &ProxyResponse{
-		Status: resp.StatusCode,
-		Body:   b,
-		Header: resp.Header.Clone(),
+		Status:     resp.StatusCode,
+		Body:       b,
+		Header:     resp.Header.Clone(),
+		StatusText: resp.Status,
 	}, nil
+}
+
+func (pr *ProxyRequest) Validate() error {
+	if strings.TrimSpace(pr.ExternalUserID) == "" {
+		return fmt.Errorf("external_user_id is required")
+	}
+	if strings.TrimSpace(pr.AccountID) == "" {
+		return fmt.Errorf("account_id is required")
+	}
+	if strings.TrimSpace(pr.URL) == "" {
+		return fmt.Errorf("url is required")
+	}
+	if _, err := url.ParseRequestURI(pr.URL); err != nil {
+		return fmt.Errorf("invalid url: %w", err)
+	}
+	validMethods := []string{
+		"GET",
+		"POST",
+		"PUT",
+		"PATCH",
+		"DELETE",
+		"HEAD",
+		"OPTIONS",
+	}
+	method := strings.ToUpper(pr.Method)
+	for _, v := range validMethods {
+		if method == v {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid method: %s", pr.Method)
+}
+
+func (c *Client) prepareRequestBody(
+	bodyData json.RawMessage,
+) (io.Reader, error) {
+	if len(bodyData) == 0 {
+		return nil, nil
+	}
+	if !json.Valid(bodyData) {
+		return nil, fmt.Errorf("invalid JSON in request body")
+	}
+
+	return bytes.NewReader(bodyData), nil
 }
