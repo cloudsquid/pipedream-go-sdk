@@ -67,7 +67,7 @@ func (c *Client) Proxy(
 		return nil, fmt.Errorf("create proxy request: %w", err)
 	}
 
-	req.Header = pr.Headers.Clone()
+	req.Header = pr.Headers
 
 	resp, err := c.doRequestViaOauth(ctx, req)
 	if err != nil {
@@ -83,7 +83,7 @@ func (c *Client) Proxy(
 	return &ProxyResponse{
 		Status:     resp.StatusCode,
 		Body:       b,
-		Header:     resp.Header.Clone(),
+		Header:     resp.Header,
 		StatusText: resp.Status,
 	}, nil
 }
