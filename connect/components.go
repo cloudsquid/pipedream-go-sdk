@@ -94,6 +94,26 @@ type PropOptions struct {
 	StringOptions any      `json:"string_options,omitempty"`
 }
 
+func (p *PropOptions) UnmarshalJSON(data []byte) error {
+	type Alias PropOptions
+	aux := &struct {
+		StringOptionsCamel any `json:"stringOptions,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(p),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	if aux.StringOptionsCamel != nil && p.StringOptions == nil {
+		p.StringOptions = aux.StringOptionsCamel
+	}
+
+	return nil
+}
+
 type DynamicProps struct {
 	ID                string             `json:"id,omitempty"`
 	ConfigurableProps []ConfigurableProp `json:"configurableProps,omitempty"`
@@ -149,7 +169,8 @@ func (c *Client) GetPropOptions(
 	configuredProps ConfiguredProps,
 ) (*PropOptions, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "components", "configure")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "components", "configure"),
+	})
 
 	endpoint := baseURL.String()
 
@@ -218,7 +239,8 @@ func (c *Client) GetComponent(
 	componentType ComponentType,
 ) (*GetComponentResponse, error) {
 	endpoint := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), componentKey)}).String()
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), componentKey),
+	}).String()
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -261,7 +283,8 @@ func (c *Client) ListComponents(
 	limit int,
 ) (*ListComponentResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType))})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType)),
+	})
 
 	queryParams := url.Values{}
 	internal.AddQueryParams(queryParams, "app", appName)
@@ -307,7 +330,8 @@ func (c *Client) ReloadComponentProps(
 	dynamicPropsID string,
 ) (*ReloadComponentPropsResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
-		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), "props")})
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), "props"),
+	})
 
 	endpoint := baseURL.String()
 
