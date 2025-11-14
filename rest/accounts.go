@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/internal"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type Account struct {
@@ -49,12 +50,17 @@ type GetAccountResponse struct {
 	Data Account `json:"data"`
 }
 
+type ListAccountsOptions struct {
+	App                *string
+	OauthAppID         *string
+	IncludeCredentials *bool
+	Limit              *int
+}
+
 // ListAccounts List connected accounts accessible by the authenticated user or workspace
 func (c *Client) ListAccounts(
 	ctx context.Context,
-	app, // optional
-	oauthAppID string, // optional
-	includeCredentials bool,
+	opts *ListAccountsOptions,
 ) (*ListAccountsResponse, error) {
 	endpoint := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "accounts"),
@@ -62,11 +68,19 @@ func (c *Client) ListAccounts(
 
 	queryParams := url.Values{}
 
-	internal.AddQueryParams(queryParams, "app", app)
-	internal.AddQueryParams(queryParams, "oauth_app_id", oauthAppID)
-
-	if includeCredentials {
-		internal.AddQueryParams(queryParams, "include_credentials", "true")
+	if opts != nil {
+		if opts.App != nil {
+			internal.AddQueryParams(queryParams, "app", *opts.App)
+		}
+		if opts.OauthAppID != nil {
+			internal.AddQueryParams(queryParams, "oauth_app_id", *opts.OauthAppID)
+		}
+		if opts.Limit != nil {
+			internal.AddQueryParams(queryParams, "limit", fmt.Sprintf("%d", *opts.Limit))
+		}
+		if opts.IncludeCredentials != nil && *opts.IncludeCredentials {
+			internal.AddQueryParams(queryParams, "include_credentials", "true")
+		}
 	}
 
 	endpoint.RawQuery = queryParams.Encode()

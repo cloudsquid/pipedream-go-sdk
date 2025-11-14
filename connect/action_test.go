@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/client"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/cloudsquid/pipedream-go-sdk/client"
+	"github.com/stretchr/testify/suite"
 )
 
 type mockLogger struct{}
@@ -90,6 +91,7 @@ func (suite *actionTestSuite) TestInvokeAction_Success() {
 		componentKey,
 		externalUserID,
 		configuredProp,
+		"",
 	)
 
 	require.NoError(err)

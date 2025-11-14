@@ -3,11 +3,12 @@ package rest
 import (
 	"context"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/client"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/cloudsquid/pipedream-go-sdk/client"
+	"github.com/stretchr/testify/suite"
 )
 
 type accountsTestSuite struct {
@@ -65,11 +66,11 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 		"", nil, server.URL, server.URL)
 	suite.pipedreamClient = &Client{Client: base}
 
+	opts := &ListAccountsOptions{}
+
 	resp, err := suite.pipedreamClient.ListAccounts(
 		context.Background(),
-		"",
-		"",
-		false,
+		opts,
 	)
 
 	require.NoError(err)
