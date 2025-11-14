@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/cloudsquid/pipedream-go-sdk"
 	"log"
+
+	"github.com/cloudsquid/pipedream-go-sdk"
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 func main() {
@@ -17,7 +20,11 @@ func main() {
 		"",                   // Connect API URL (optional, defaults to public)
 		"")
 
-	accounts, err := sdk.Connect().ListAccounts(context.Background(), "org_1234", "slack", "", false)
+	accounts, err := sdk.Connect().ListAccounts(context.Background(), &connect.ListAccountsOptions{
+		ExternalUserID:     "org_1234",
+		App:                internal.StringPtr("slack"),
+		IncludeCredentials: false,
+	})
 	if err != nil {
 		log.Fatalf("error listing accounts: %v", err)
 	}

@@ -3,11 +3,13 @@ package connect
 import (
 	"context"
 	"fmt"
-	"github.com/cloudsquid/pipedream-go-sdk/client"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/cloudsquid/pipedream-go-sdk/client"
+	"github.com/cloudsquid/pipedream-go-sdk/internal"
+	"github.com/stretchr/testify/suite"
 )
 
 type accountsTestSuite struct {
@@ -79,10 +81,12 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 
 	resp, err := suite.pipedreamClient.ListAccounts(
 		context.Background(),
-		"user-123",
-		"github",
-		"oauth-789",
-		true,
+		&ListAccountsOptions{
+			ExternalUserID:     "user-123",
+			IncludeCredentials: true,
+			OauthAppID:         internal.StringPtr("oauth-789"),
+			App:                internal.StringPtr("github"),
+		},
 	)
 
 	require.NoError(err)

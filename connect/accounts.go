@@ -45,6 +45,16 @@ type Credentials struct {
 	OauthUid         string `json:"oauth_uid,omitempty"`
 }
 
+type ListAccountsOptions struct {
+	ExternalUserID     string
+	IncludeCredentials bool
+	OauthAppID         *string
+	After              *string
+	Before             *string
+	App                *string
+	Limit              *int
+}
+
 type ListAccountsResponse struct {
 	PageInfo PageInfo   `json:"page_info"`
 	Data     []*Account `json:"data"`
@@ -58,23 +68,36 @@ type GetAccountResponse struct {
 // All the parameters are optional
 func (c *Client) ListAccounts(
 	ctx context.Context,
-	externalUserID string,
-	app string,
-	oauthAppId string,
-	includeCredentials bool,
+	opts *ListAccountsOptions,
 ) (*ListAccountsResponse, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts"),
 	})
 
+	if opts == nil {
+		return nil, fmt.Errorf("opts cannot be nil")
+	}
+
 	queryParams := url.Values{}
-	internal.AddQueryParams(queryParams, "external_user_id", externalUserID)
-	internal.AddQueryParams(queryParams, "app", app)
-	internal.AddQueryParams(queryParams, "oauth_app_id", oauthAppId)
-	internal.AddQueryParams(queryParams,
-		"include_credentials",
-		strconv.FormatBool(includeCredentials),
-	)
+
+	internal.AddQueryParams(queryParams, "external_user_id", opts.ExternalUserID)
+	internal.AddQueryParams(queryParams, "include_credentials", strconv.FormatBool(opts.IncludeCredentials))
+
+	if opts.App != nil {
+		internal.AddQueryParams(queryParams, "app", *opts.App)
+	}
+	if opts.OauthAppID != nil {
+		internal.AddQueryParams(queryParams, "oauth_app_id", *opts.OauthAppID)
+	}
+	if opts.After != nil {
+		internal.AddQueryParams(queryParams, "after", *opts.After)
+	}
+	if opts.Before != nil {
+		internal.AddQueryParams(queryParams, "before", *opts.Before)
+	}
+	if opts.Limit != nil {
+		internal.AddQueryParams(queryParams, "limit", fmt.Sprintf("%d", *opts.Limit))
+	}
 
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()
@@ -89,6 +112,11 @@ func (c *Client) ListAccounts(
 		return nil, fmt.Errorf("executing list account request: %w", err)
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		raw, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(raw))
+	}
 
 	var accountsList ListAccountsResponse
 

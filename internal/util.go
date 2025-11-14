@@ -49,3 +49,7 @@ func AddQueryParams(params url.Values, key, value string) {
 		params.Add(key, value)
 	}
 }
+
+func StringPtr(s string) *string {
+	return &s
+}
