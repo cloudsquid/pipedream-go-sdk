@@ -10,40 +10,29 @@ import (
 	"path"
 	"time"
 
+	"github.com/cloudsquid/pipedream-go-sdk/connect"
 	"github.com/cloudsquid/pipedream-go-sdk/internal"
 )
 
 type Account struct {
-	ID              string      `json:"id,omitempty"`
-	Name            string      `json:"name,omitempty"`
-	ExternalID      string      `json:"external_id,omitempty"`
-	Healthy         bool        `json:"healthy,omitempty"`
-	Dead            bool        `json:"dead,omitempty"`
-	App             App         `json:"app,omitzero"`
-	CreatedAt       time.Time   `json:"created_at,omitzero"`
-	UpdatedAt       time.Time   `json:"updated_at,omitzero"`
-	Credentials     Credentials `json:"credentials,omitzero"`
-	ExpiresAt       any         `json:"expires_at,omitempty"`
-	Error           any         `json:"error,omitempty"`
-	LastRefreshedAt time.Time   `json:"last_refreshed_at,omitzero"`
-	NextRefreshAt   time.Time   `json:"next_refresh_at,omitzero"`
-}
-
-type App struct {
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	NameSlug    string `json:"name_slug,omitempty"`
-	AuthType    string `json:"auth_type,omitempty"`
-	Description string `json:"description,omitempty"`
-}
-type Credentials struct {
-	OauthClientId    string `json:"oauth_client_id,omitempty"`
-	OauthAccessToken string `json:"oauth_access_token,omitempty"`
-	OauthUid         string `json:"oauth_uid,omitempty"`
+	ID              string              `json:"id,omitempty"`
+	Name            string              `json:"name,omitempty"`
+	ExternalID      string              `json:"external_id,omitempty"`
+	Healthy         bool                `json:"healthy,omitempty"`
+	Dead            bool                `json:"dead,omitempty"`
+	App             connect.App         `json:"app,omitzero"`
+	CreatedAt       time.Time           `json:"created_at,omitzero"`
+	UpdatedAt       time.Time           `json:"updated_at,omitzero"`
+	Credentials     connect.Credentials `json:"credentials,omitzero"`
+	ExpiresAt       any                 `json:"expires_at,omitempty"`
+	Error           any                 `json:"error,omitempty"`
+	LastRefreshedAt time.Time           `json:"last_refreshed_at,omitzero"`
+	NextRefreshAt   time.Time           `json:"next_refresh_at,omitzero"`
 }
 
 type ListAccountsResponse struct {
-	Data []Account `json:"data"`
+	PageInfo connect.PageInfo `json:"page_info"`
+	Data     []Account        `json:"data"`
 }
 
 type GetAccountResponse struct {

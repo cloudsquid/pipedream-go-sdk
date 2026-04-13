@@ -197,7 +197,7 @@ func (suite *componentTestSuite) TestSearchRegistryComponents_Success() {
 	resp, err := suite.pipedreamClient.SearchRegistryComponents(
 		context.Background(),
 		"SendSMS",
-		"", 0, false,
+		"", 0, false, nil,
 	)
 
 	require.NoError(err)

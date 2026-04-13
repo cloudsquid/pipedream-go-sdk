@@ -413,10 +413,6 @@ func (suite *triggerTestSuite) TestUpdateTriggerWebhooks_Success() {
 
 	expectedPath := "/project-abc/deployed-triggers/component_id/webhooks"
 
-	expectedRequest := UpdateTriggerWebhooksRequest{
-		ExternalUserID: "jay",
-		WebhookURLs:    webhookURLs,
-	}
 	expectedResponse := `{
 		"webhook_urls": ["https://events.example.com/gitlab-new-issue"]
 	}`
@@ -433,6 +429,7 @@ func (suite *triggerTestSuite) TestUpdateTriggerWebhooks_Success() {
 		case r.URL.Path == expectedPath:
 			require.Equal(http.MethodPut, r.Method)
 			require.Equal(expectedPath, r.URL.Path)
+			require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
 
 			body, err := io.ReadAll(r.Body)
 			require.NoError(err)
@@ -441,8 +438,7 @@ func (suite *triggerTestSuite) TestUpdateTriggerWebhooks_Success() {
 			err = json.Unmarshal(body, &reqBody)
 			require.NoError(err)
 
-			require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
-			require.Equal(expectedRequest.WebhookURLs, reqBody.WebhookURLs)
+			require.Equal(webhookURLs, reqBody.WebhookURLs)
 
 			w.WriteHeader(http.StatusOK)
 			_, _ = fmt.Fprint(w, expectedResponse)
@@ -471,7 +467,7 @@ func (suite *triggerTestSuite) TestRetrieveTriggerWorkflows_Success() {
 	externalUserID := "jay"
 	deployedComponentID := "component_id"
 
-	expectedPath := "/project-abc/deployed-triggers/component_id/workflows"
+	expectedPath := "/project-abc/deployed-triggers/component_id/pipelines"
 
 	expectedResponse := `{
 	  "workflow_ids": [
@@ -520,12 +516,8 @@ func (suite *triggerTestSuite) TestUpdateTriggerWorkflows_Success() {
 	deployedComponentID := "component_id"
 	workflowIDs := []string{"123"}
 
-	expectedPath := "/project-abc/deployed-triggers/component_id/workflows"
+	expectedPath := "/project-abc/deployed-triggers/component_id/pipelines"
 
-	expectedRequest := UpdateTriggerWorkflowsRequest{
-		ExternalUserID: "jay",
-		WorkflowIDs:    workflowIDs,
-	}
 	expectedResponse := `{
 		"workflow_ids": ["123"]
 	}`
@@ -542,6 +534,7 @@ func (suite *triggerTestSuite) TestUpdateTriggerWorkflows_Success() {
 		case r.URL.Path == expectedPath:
 			require.Equal(http.MethodPut, r.Method)
 			require.Equal(expectedPath, r.URL.Path)
+			require.Equal(externalUserID, r.URL.Query().Get("external_user_id"))
 
 			body, err := io.ReadAll(r.Body)
 			require.NoError(err)
@@ -550,8 +543,7 @@ func (suite *triggerTestSuite) TestUpdateTriggerWorkflows_Success() {
 			err = json.Unmarshal(body, &reqBody)
 			require.NoError(err)
 
-			require.Equal(expectedRequest.ExternalUserID, reqBody.ExternalUserID)
-			require.Equal(expectedRequest.WorkflowIDs, reqBody.WorkflowIDs)
+			require.Equal(workflowIDs, reqBody.WorkflowIDs)
 
 			w.WriteHeader(http.StatusOK)
 			_, _ = fmt.Fprint(w, expectedResponse)

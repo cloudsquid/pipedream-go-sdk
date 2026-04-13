@@ -24,12 +24,23 @@ const (
 	Components ComponentType = "components"
 )
 
+type ComponentAnnotations struct {
+	DestructiveHint *bool  `json:"destructiveHint,omitempty"`
+	IdempotentHint  *bool  `json:"idempotentHint,omitempty"`
+	OpenWorldHint   *bool  `json:"openWorldHint,omitempty"`
+	ReadOnlyHint    *bool  `json:"readOnlyHint,omitempty"`
+	Title           string `json:"title,omitempty"`
+}
+
 type Component struct {
-	Key         string        `json:"key,omitempty"`
-	Name        string        `json:"name,omitempty"`
-	Version     string        `json:"version,omitempty"`
-	Type        ComponentType `json:"type,omitempty"`
-	Description string        `json:"description,omitempty"`
+	Key           string                `json:"key,omitempty"`
+	Name          string                `json:"name,omitempty"`
+	Version       string                `json:"version,omitempty"`
+	Type          ComponentType         `json:"type,omitempty"`
+	Description   string                `json:"description,omitempty"`
+	ComponentType string                `json:"component_type,omitempty"`
+	Stash         string                `json:"stash,omitempty"`
+	Annotations   *ComponentAnnotations `json:"annotations,omitempty"`
 }
 
 func (c Component) String() string {
@@ -49,10 +60,12 @@ type ConfigurableProp struct {
 	Default        any    `json:"default,omitempty"`
 	Min            int    `json:"min,omitempty"`
 	Max            int    `json:"max,omitempty"`
-	Disabled       bool   `json:"disabled,omitempty"`
-	Secret         bool   `json:"secret,omitempty"`
-	Optional       bool   `json:"optional,omitempty"`
-	ReloadProps    bool   `json:"reloadProps,omitempty"`
+	Disabled    bool  `json:"disabled,omitempty"`
+	Hidden      *bool `json:"hidden,omitempty"`
+	Secret      bool  `json:"secret,omitempty"`
+	Optional    bool  `json:"optional,omitempty"`
+	ReloadProps bool  `json:"reloadProps,omitempty"`
+	WithLabel   *bool `json:"withLabel,omitempty"`
 }
 
 func (c ConfigurableProp) String() string {
@@ -144,6 +157,61 @@ type ReloadComponentPropsRequest struct {
 	ConfiguredProps ConfiguredProps `json:"configured_props,omitempty"`
 	ID              string          `json:"id,omitempty"`
 	DynamicPropsID  string          `json:"dynamic_props_id,omitempty"`
+	Version         string          `json:"version,omitempty"`
+	Blocking        *bool           `json:"blocking,omitempty"`
+}
+
+type ConfigureComponentRequest struct {
+	ExternalUserID  string          `json:"external_user_id,omitempty"`
+	ComponentKey    string          `json:"id,omitempty"`
+	PropName        string          `json:"prop_name,omitempty"`
+	ConfiguredProps ConfiguredProps `json:"configured_props,omitempty"`
+	Version         string          `json:"version,omitempty"`
+	Blocking        *bool           `json:"blocking,omitempty"`
+	DynamicPropsID  string          `json:"dynamic_props_id,omitempty"`
+	Page            *int            `json:"page,omitempty"`
+	PrevContext     any             `json:"prev_context,omitempty"`
+	Query           string          `json:"query,omitempty"`
+}
+
+type ListComponentsOptions struct {
+	ComponentType ComponentType
+	App           string
+	Q             string
+	Limit         *int
+	After         *string
+	Before        *string
+	Registry      *string
+}
+
+type GetComponentOptions struct {
+	ComponentKey  string
+	ComponentType ComponentType
+	Version       *string
+}
+
+type ReloadComponentPropsOptions struct {
+	ComponentType   ComponentType
+	ConfiguredProps ConfiguredProps
+	ExternalUserID  string
+	ComponentKey    string
+	DynamicPropsID  string
+	Version         string
+	Blocking        *bool
+}
+
+type GetPropOptionsParams struct {
+	PropName        string
+	ComponentKey    string
+	ExternalUserID  string
+	ConfiguredProps ConfiguredProps
+	ComponentType   ComponentType
+	Version         string
+	Blocking        *bool
+	DynamicPropsID  string
+	Page            *int
+	PrevContext      any
+	Query           string
 }
 
 // GetComponentResponse is the response for the get component endpoint
@@ -153,14 +221,11 @@ type GetComponentResponse struct {
 
 // ListComponentResponse is the response for the component list endpoint
 type ListComponentResponse struct {
-	Data []*Component `json:"data,omitempty"`
+	PageInfo PageInfo     `json:"page_info,omitzero"`
+	Data     []*Component `json:"data,omitempty"`
 }
 
-// https://pipedream.com/docs/connect/api/#configure-a-component
-// ConfigureComponent calls the configure endpoint for a component in pipedream
-// externalUserID is the id defined by a third party or us
-// component Key is the componentID
-// propName is the key in the componentDetails
+// Deprecated: Use GetPropOptionsWithParams instead.
 func (c *Client) GetPropOptions(
 	ctx context.Context,
 	propName string,
@@ -231,8 +296,7 @@ func (c *Client) GetPropOptions(
 	return &propOptions, nil
 }
 
-// https://pipedream.com/docs/connect/api/#retrieve-a-component
-// GetComponent retrieves a pipedream component and its configurable props
+// Deprecated: Use GetComponentWithOptions instead.
 func (c *Client) GetComponent(
 	ctx context.Context,
 	componentKey string,
@@ -273,8 +337,7 @@ func (c *Client) GetComponent(
 	return &component, nil
 }
 
-// https://pipedream.com/docs/connect/api/#list-components
-// ListComponents lists the components available in pipedream
+// Deprecated: Use ListComponentsWithOptions instead.
 func (c *Client) ListComponents(
 	ctx context.Context,
 	componentType ComponentType,
@@ -318,9 +381,7 @@ func (c *Client) ListComponents(
 	return &respJson, nil
 }
 
-// ReloadComponentProps Reload the component’s props after configuring a dynamic prop,
-// based on the current component’s configuration
-// will use the component’s configuration to retrieve a new list of props depending on the value of the props that were configured so far
+// Deprecated: Use ReloadComponentPropsWithOptions instead.
 func (c *Client) ReloadComponentProps(
 	ctx context.Context,
 	componentType ComponentType,
@@ -362,6 +423,206 @@ func (c *Client) ReloadComponentProps(
 	if err := internal.UnmarshalResponse(resp, &respJson); err != nil {
 		return nil, fmt.Errorf(
 			"parsing response for reloading component props: %w", err)
+	}
+
+	return &respJson, nil
+}
+
+// GetPropOptionsWithParams configures a component prop and retrieves its available options.
+// Supports actions/configure, triggers/configure, and components/configure paths via ComponentType.
+func (c *Client) GetPropOptionsWithParams(
+	ctx context.Context,
+	params *GetPropOptionsParams,
+) (*PropOptions, error) {
+	componentType := params.ComponentType
+	if componentType == "" {
+		componentType = Components
+	}
+
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(componentType), "configure"),
+	})
+
+	endpoint := baseURL.String()
+
+	requestBody := &ConfigureComponentRequest{
+		ExternalUserID:  params.ExternalUserID,
+		ComponentKey:    params.ComponentKey,
+		PropName:        params.PropName,
+		ConfiguredProps: params.ConfiguredProps,
+		Version:         params.Version,
+		Blocking:        params.Blocking,
+		DynamicPropsID:  params.DynamicPropsID,
+		Page:            params.Page,
+		PrevContext:     params.PrevContext,
+		Query:           params.Query,
+	}
+
+	bs, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(bs))
+	if err != nil {
+		return nil, fmt.Errorf("creating new request: %w", err)
+	}
+
+	response, err := c.doRequestViaOauth(ctx, req)
+	if err != nil {
+		return nil,
+			fmt.Errorf("executing request to configure component %s for user %s: %w",
+				params.ComponentKey, params.ExternalUserID, err)
+	}
+	defer response.Body.Close()
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var propOptions PropOptions
+	if err := json.Unmarshal(bodyBytes, &propOptions); err != nil {
+		return nil, fmt.Errorf("unmarshalling body into propOptions: %w: %w",
+			errors.New(string(bodyBytes)), err)
+	}
+
+	if len(propOptions.Errors) > 0 {
+		return nil, errors.New(strings.Join(propOptions.Errors, "."))
+	}
+
+	return &propOptions, nil
+}
+
+// GetComponentWithOptions retrieves a component and its configurable props with additional options.
+func (c *Client) GetComponentWithOptions(
+	ctx context.Context,
+	opts *GetComponentOptions,
+) (*GetComponentResponse, error) {
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(opts.ComponentType), opts.ComponentKey),
+	})
+
+	queryParams := url.Values{}
+	if opts.Version != nil {
+		internal.AddQueryParams(queryParams, "version", *opts.Version)
+	}
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating new get request for endpoint %s: %w", endpoint, err)
+	}
+
+	response, err := c.doRequestViaOauth(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading response body: %w", err)
+		}
+		return nil, fmt.Errorf("unexpected status code %d:%s", response.StatusCode, string(bodyBytes))
+	}
+
+	var component GetComponentResponse
+	if err := internal.UnmarshalResponse(response, &component); err != nil {
+		return nil, fmt.Errorf(
+			"parsing response for getting component details for component %s: %w",
+			opts.ComponentKey, err)
+	}
+
+	return &component, nil
+}
+
+// ListComponentsWithOptions lists components with full pagination and filtering support.
+func (c *Client) ListComponentsWithOptions(
+	ctx context.Context,
+	opts *ListComponentsOptions,
+) (*ListComponentResponse, error) {
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(opts.ComponentType)),
+	})
+
+	queryParams := url.Values{}
+	internal.AddQueryParams(queryParams, "app", opts.App)
+	internal.AddQueryParams(queryParams, "q", opts.Q)
+	internal.AddQueryParamInt(queryParams, "limit", opts.Limit)
+	if opts.After != nil {
+		internal.AddQueryParams(queryParams, "after", *opts.After)
+	}
+	if opts.Before != nil {
+		internal.AddQueryParams(queryParams, "before", *opts.Before)
+	}
+	if opts.Registry != nil {
+		internal.AddQueryParams(queryParams, "registry", *opts.Registry)
+	}
+
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get request for endpoint %s: %w", endpoint, err)
+	}
+
+	resp, err := c.doRequestViaOauth(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var respJson ListComponentResponse
+	if err := internal.UnmarshalResponse(resp, &respJson); err != nil {
+		return nil, fmt.Errorf("parsing response for listing components: %w", err)
+	}
+
+	return &respJson, nil
+}
+
+// ReloadComponentPropsWithOptions reloads component props with full options support.
+func (c *Client) ReloadComponentPropsWithOptions(
+	ctx context.Context,
+	opts *ReloadComponentPropsOptions,
+) (*ReloadComponentPropsResponse, error) {
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), string(opts.ComponentType), "props"),
+	})
+
+	endpoint := baseURL.String()
+
+	requestBody := &ReloadComponentPropsRequest{
+		ExternalUserID:  opts.ExternalUserID,
+		ID:              opts.ComponentKey,
+		ConfiguredProps: opts.ConfiguredProps,
+		DynamicPropsID:  opts.DynamicPropsID,
+		Version:         opts.Version,
+		Blocking:        opts.Blocking,
+	}
+
+	bs, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling reload component props body request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(bs))
+	if err != nil {
+		return nil, fmt.Errorf("creating reload component props request: %w", err)
+	}
+
+	resp, err := c.doRequestViaOauth(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing reload component props request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var respJson ReloadComponentPropsResponse
+	if err := internal.UnmarshalResponse(resp, &respJson); err != nil {
+		return nil, fmt.Errorf("parsing response for reloading component props: %w", err)
 	}
 
 	return &respJson, nil

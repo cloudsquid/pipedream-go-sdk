@@ -30,13 +30,23 @@ type Account struct {
 	NextRefreshAt   time.Time   `json:"next_refresh_at,omitzero"`
 }
 
+type AppConnect struct {
+	ProxyEnabled       bool     `json:"proxy_enabled,omitempty"`
+	AllowedDomains     []string `json:"allowed_domains,omitempty"`
+	BaseProxyTargetURL string   `json:"base_proxy_target_url,omitempty"`
+}
+
 type App struct {
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	NameSlug    string `json:"name_slug,omitempty"`
-	AuthType    string `json:"auth_type,omitempty"`
-	Description string `json:"description,omitempty"`
-	ImgSrc      string `json:"img_src,omitempty"`
+	ID               string      `json:"id,omitempty"`
+	Name             string      `json:"name,omitempty"`
+	NameSlug         string      `json:"name_slug,omitempty"`
+	AuthType         string      `json:"auth_type,omitempty"`
+	Description      string      `json:"description,omitempty"`
+	ImgSrc           string      `json:"img_src,omitempty"`
+	CustomFieldsJSON *string     `json:"custom_fields_json,omitempty"`
+	Categories       []string    `json:"categories,omitempty"`
+	FeaturedWeight   *float64    `json:"featured_weight,omitempty"`
+	Connect          *AppConnect `json:"connect,omitempty"`
 }
 
 type Credentials struct {
@@ -62,6 +72,11 @@ type ListAccountsResponse struct {
 
 type GetAccountResponse struct {
 	Data Account `json:"data"`
+}
+
+type GetAccountOptions struct {
+	AccountID          string
+	IncludeCredentials *bool
 }
 
 // ListAccounts lists all accounts related to the currently set projectID
@@ -128,7 +143,7 @@ func (c *Client) ListAccounts(
 	return &accountsList, nil
 }
 
-// GetAccount Retrieve the account details for a specific account based on the account ID
+// Deprecated: Use GetAccountWithOptions instead.
 func (c *Client) GetAccount(
 	ctx context.Context,
 	externalUserID string,
@@ -255,4 +270,45 @@ func (c *Client) DeleteEndUser(
 		return nil
 	}
 	return fmt.Errorf("expected status %d, got %d", http.StatusNoContent, response.StatusCode)
+}
+
+// GetAccountWithOptions retrieves account details for a specific account.
+func (c *Client) GetAccountWithOptions(
+	ctx context.Context,
+	opts *GetAccountOptions,
+) (*GetAccountResponse, error) {
+	baseURL := c.ConnectURL().ResolveReference(&url.URL{
+		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", opts.AccountID),
+	})
+
+	queryParams := url.Values{}
+	internal.AddQueryParamBool(queryParams, "include_credentials", opts.IncludeCredentials)
+
+	baseURL.RawQuery = queryParams.Encode()
+	endpoint := baseURL.String()
+
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating get account request: %w", err)
+	}
+
+	response, err := c.doRequestViaOauth(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request to get account: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(response.Body)
+		return nil,
+			fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(bodyBytes))
+	}
+
+	var accountDetail GetAccountResponse
+	err = json.NewDecoder(response.Body).Decode(&accountDetail)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling response for request to get account: %w", err)
+	}
+
+	return &accountDetail, nil
 }
