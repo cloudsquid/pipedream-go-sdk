@@ -30,16 +30,23 @@ type Account struct {
 	NextRefreshAt   time.Time   `json:"next_refresh_at,omitzero"`
 }
 
+type AppConnect struct {
+	ProxyEnabled       bool     `json:"proxy_enabled,omitempty"`
+	AllowedDomains     []string `json:"allowed_domains,omitempty"`
+	BaseProxyTargetURL string   `json:"base_proxy_target_url,omitempty"`
+}
+
 type App struct {
-	ID               string   `json:"id,omitempty"`
-	Name             string   `json:"name,omitempty"`
-	NameSlug         string   `json:"name_slug,omitempty"`
-	AuthType         string   `json:"auth_type,omitempty"`
-	Description      string   `json:"description,omitempty"`
-	ImgSrc           string   `json:"img_src,omitempty"`
-	CustomFieldsJSON *string  `json:"custom_fields_json,omitempty"`
-	Categories       []string `json:"categories,omitempty"`
-	FeaturedWeight   *float64 `json:"featured_weight,omitempty"`
+	ID               string      `json:"id,omitempty"`
+	Name             string      `json:"name,omitempty"`
+	NameSlug         string      `json:"name_slug,omitempty"`
+	AuthType         string      `json:"auth_type,omitempty"`
+	Description      string      `json:"description,omitempty"`
+	ImgSrc           string      `json:"img_src,omitempty"`
+	CustomFieldsJSON *string     `json:"custom_fields_json,omitempty"`
+	Categories       []string    `json:"categories,omitempty"`
+	FeaturedWeight   *float64    `json:"featured_weight,omitempty"`
+	Connect          *AppConnect `json:"connect,omitempty"`
 }
 
 type Credentials struct {

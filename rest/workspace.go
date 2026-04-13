@@ -42,7 +42,7 @@ type Subscription struct {
 	ID         string `json:"id"`
 	EmitterID  string `json:"emitter_id"`
 	ListenerID string `json:"listener_id"`
-	EventID    string `json:"event_id"`
+	EventName  string `json:"event_name"`
 }
 
 type GetWorkspaceSourcesResponse struct {
@@ -206,7 +206,7 @@ func (c *Client) GetWorkspaceSources(
 	}
 
 	baseURL := c.RestURL().ResolveReference(&url.URL{
-		Path: path.Join(c.RestURL().Path, "workspaces", orgID, "sources"),
+		Path: path.Join(c.RestURL().Path, "orgs", orgID, "sources"),
 	})
 
 	endpoint := baseURL.String()

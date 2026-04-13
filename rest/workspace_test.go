@@ -173,7 +173,7 @@ func (suite *workspacesTestSuite) TestGetWorkspaceSources_Success() {
 	  ]
 	}`
 
-	expectedPath := "/workspaces/o_Qa8I1Z/sources"
+	expectedPath := "/orgs/o_Qa8I1Z/sources"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(expectedPath, r.URL.Path)

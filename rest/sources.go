@@ -12,10 +12,11 @@ import (
 )
 
 type CreateSourceRequest struct {
-	ComponentID   string `json:"component_id,omitempty"`
-	ComponentCode string `json:"component_code,omitempty"`
-	ComponentURL  string `json:"component_url,omitempty"`
-	Name          string `json:"name,omitempty"`
+	ComponentID     string         `json:"component_id,omitempty"`
+	ComponentCode   string         `json:"component_code,omitempty"`
+	ComponentURL    string         `json:"component_url,omitempty"`
+	Name            string         `json:"name,omitempty"`
+	ConfiguredProps map[string]any `json:"configured_props,omitempty"`
 }
 
 type UpdateSourceRequest struct {
@@ -61,6 +62,7 @@ func (c *Client) CreateSource(
 	componentCode,
 	componentURL,
 	name string,
+	configuredProps map[string]any,
 ) (*CreateSourceResponse, error) {
 	if componentID == "" && componentCode == "" && componentURL == "" {
 		return nil, fmt.Errorf("one of component_id, component_code, or component_url is required")
@@ -70,10 +72,11 @@ func (c *Client) CreateSource(
 	endpoint := baseURL.String()
 
 	body := &CreateSourceRequest{
-		ComponentID:   componentID,
-		ComponentCode: componentCode,
-		ComponentURL:  componentURL,
-		Name:          name,
+		ComponentID:     componentID,
+		ComponentCode:   componentCode,
+		ComponentURL:    componentURL,
+		Name:            name,
+		ConfiguredProps: configuredProps,
 	}
 
 	rb, err := json.Marshal(body)

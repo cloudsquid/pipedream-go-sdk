@@ -69,6 +69,7 @@ func (suite *sourcesTestSuite) TestCreateSource_Success() {
 		"",
 		"https://github.com/example/component.ts",
 		"My Source",
+		nil,
 	)
 
 	require.NoError(err)

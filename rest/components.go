@@ -30,10 +30,12 @@ type ConfigurableProp struct {
 	Default        any    `json:"default,omitempty"`
 	Min            int    `json:"min,omitempty"`
 	Max            int    `json:"max,omitempty"`
-	Disabled       bool   `json:"disabled,omitempty"`
-	Secret         bool   `json:"secret,omitempty"`
-	Optional       bool   `json:"optional,omitempty"`
-	ReloadProps    bool   `json:"reloadProps,omitempty"`
+	Disabled    bool  `json:"disabled,omitempty"`
+	Hidden      *bool `json:"hidden,omitempty"`
+	Secret      bool  `json:"secret,omitempty"`
+	Optional    bool  `json:"optional,omitempty"`
+	ReloadProps bool  `json:"reloadProps,omitempty"`
+	WithLabel   *bool `json:"withLabel,omitempty"`
 }
 
 type Component struct {
@@ -180,6 +182,7 @@ func (c *Client) SearchRegistryComponents(
 	app string,
 	similarityThreshold int,
 	debug bool,
+	limit *int,
 ) (*ComponentSearchResponse, error) {
 	baseURL := c.RestURL().ResolveReference(&url.URL{
 		Path: path.Join(c.RestURL().Path, "components", "search")})
@@ -199,6 +202,8 @@ func (c *Client) SearchRegistryComponents(
 	if debug {
 		internal.AddQueryParams(queryParams, "debug", "true")
 	}
+
+	internal.AddQueryParamInt(queryParams, "limit", limit)
 
 	baseURL.RawQuery = queryParams.Encode()
 	endpoint := baseURL.String()
