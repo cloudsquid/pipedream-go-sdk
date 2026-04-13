@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 )
 
 func UnmarshalResponse(response *http.Response, result any, okStatusCodes ...int) error {
@@ -52,4 +53,24 @@ func AddQueryParams(params url.Values, key, value string) {
 
 func StringPtr(s string) *string {
 	return &s
+}
+
+func IntPtr(i int) *int {
+	return &i
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
+}
+
+func AddQueryParamInt(params url.Values, key string, value *int) {
+	if value != nil {
+		params.Add(key, strconv.Itoa(*value))
+	}
+}
+
+func AddQueryParamBool(params url.Values, key string, value *bool) {
+	if value != nil {
+		params.Add(key, strconv.FormatBool(*value))
+	}
 }
