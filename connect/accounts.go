@@ -50,9 +50,10 @@ type App struct {
 }
 
 type Credentials struct {
-	OauthClientId    string `json:"oauth_client_id,omitempty"`
-	OauthAccessToken string `json:"oauth_access_token,omitempty"`
-	OauthUid         string `json:"oauth_uid,omitempty"`
+	OauthClientId     string `json:"oauth_client_id,omitempty"`
+	OauthAccessToken  string `json:"oauth_access_token,omitempty"`
+	OauthRefreshToken string `json:"oauth_refresh_token,omitempty"`
+	OauthUid          string `json:"oauth_uid,omitempty"`
 }
 
 type ListAccountsOptions struct {
