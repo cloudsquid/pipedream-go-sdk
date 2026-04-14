@@ -70,10 +70,6 @@ type ListAccountsResponse struct {
 	Data     []*Account `json:"data"`
 }
 
-type GetAccountResponse struct {
-	Data Account `json:"data"`
-}
-
 type GetAccountOptions struct {
 	AccountID          string
 	IncludeCredentials *bool
@@ -150,7 +146,7 @@ func (c *Client) GetAccount(
 	app string,
 	includeCredentials bool,
 	accountId string,
-) (*GetAccountResponse, error) {
+) (*Account, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", accountId),
 	})
@@ -184,7 +180,7 @@ func (c *Client) GetAccount(
 			fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(bodyBytes))
 	}
 
-	var accountDetail GetAccountResponse
+	var accountDetail Account
 	err = json.NewDecoder(response.Body).Decode(&accountDetail)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshalling response for request to get account: %w", err)
@@ -276,7 +272,7 @@ func (c *Client) DeleteEndUser(
 func (c *Client) GetAccountWithOptions(
 	ctx context.Context,
 	opts *GetAccountOptions,
-) (*GetAccountResponse, error) {
+) (*Account, error) {
 	baseURL := c.ConnectURL().ResolveReference(&url.URL{
 		Path: path.Join(c.ConnectURL().Path, c.ProjectID(), "accounts", opts.AccountID),
 	})
@@ -304,7 +300,7 @@ func (c *Client) GetAccountWithOptions(
 			fmt.Errorf("unexpected status code %d: %s", response.StatusCode, string(bodyBytes))
 	}
 
-	var accountDetail GetAccountResponse
+	var accountDetail Account
 	err = json.NewDecoder(response.Body).Decode(&accountDetail)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshalling response for request to get account: %w", err)
