@@ -97,19 +97,17 @@ func (suite *accountsTestSuite) TestListAccounts_Success() {
 func (suite *accountsTestSuite) TestGetAccount_Success() {
 	require := suite.Require()
 	expectedResponse := `{
-		"data": {
-				"id": "apn_XehyZPr",
-				"name": "shaghayegh",
-				"external_id": "user-123",
-				"healthy": true,
-				"dead": false,
-				"app": {
-				  "id": "app_OkrhR1",
-				  "name": "github"
-				},
-				"created_at": "2024-07-30T22:52:48.000Z",
-				"updated_at": "2024-08-01T03:44:17.000Z"
-		}
+		"id": "apn_XehyZPr",
+		"name": "shaghayegh",
+		"external_id": "user-123",
+		"healthy": true,
+		"dead": false,
+		"app": {
+			"id": "app_OkrhR1",
+			"name": "github"
+		},
+		"created_at": "2024-07-30T22:52:48.000Z",
+		"updated_at": "2024-08-01T03:44:17.000Z"
 	}`
 	expectedPath := "/project-abc/accounts/apn_XehyZPr"
 
@@ -149,7 +147,7 @@ func (suite *accountsTestSuite) TestGetAccount_Success() {
 	)
 
 	require.NoError(err)
-	require.Equal("shaghayegh", resp.Data.Name)
+	require.Equal("shaghayegh", resp.Name)
 }
 
 func (suite *accountsTestSuite) TestGetAccount_Failure() {
