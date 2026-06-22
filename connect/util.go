@@ -19,7 +19,9 @@ func (c *Client) doRequestViaOauth(
 
 	req.Header.Set("Authorization", "Bearer "+c.Token().AccessToken)
 	req.Header.Set("X-PD-Environment", c.Environment())
-	req.Header.Set("Content-Type", "application/json")
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	response, err := c.HTTPClient().Do(req)
 	if err != nil {

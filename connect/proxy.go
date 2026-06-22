@@ -20,6 +20,7 @@ type ProxyRequest struct {
 	URL            string          `json:"url"`
 	Headers        http.Header     `json:"headers,omitempty"`
 	Body           json.RawMessage `json:"body,omitempty"`
+	RawBody        []byte          `json:"-"`
 }
 
 type ProxyResponse struct {
@@ -52,9 +53,15 @@ func (c *Client) Proxy(
 	q.Set("account_id", pr.AccountID)
 	proxyURL.RawQuery = q.Encode()
 
-	body, err := c.prepareRequestBody(pr.Body)
-	if err != nil {
-		return nil, fmt.Errorf("prepare request body: %w", err)
+	var body io.Reader
+	if len(pr.RawBody) > 0 {
+		body = bytes.NewReader(pr.RawBody)
+	} else {
+		var err error
+		body, err = c.prepareRequestBody(pr.Body)
+		if err != nil {
+			return nil, fmt.Errorf("prepare request body: %w", err)
+		}
 	}
 
 	req, err := http.NewRequestWithContext(
